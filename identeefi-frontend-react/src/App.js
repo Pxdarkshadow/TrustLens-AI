@@ -19,9 +19,13 @@ import FakeProduct from './components/pages/FakeProduct';
 import UpdateProductDetails from './components/pages/UpdateProductDetails';
 import WalletButtons from './components/WalletButtons/index';
 import WalletTest from "./components/pages/WalletConnect";
+import  NetworkCheck  from './components/pages/NetworkCheck';
+import Router from './components/Router';
 function App() {
 
   return (
+    // <NetworkCheck >
+
     <Routes>
       <Route path='/' element={<Layout />}>
 
@@ -75,6 +79,7 @@ function App() {
 
       </Route>
     </Routes>
+// </NetworkCheck>
 
   );
 }

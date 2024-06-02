@@ -55,7 +55,19 @@ const metadata = {
     universal: 'YOUR_APP_UNIVERSAL_LINK.com'
   }
 }
-const chains = [mainnet, polygon, arbitrum] 
+const vanarChain = {
+  id: 0x13308,
+  name: 'Vanguard',
+  nativeCurrency: { name: 'Vanar', symbol: 'VG', decimals: 18 },
+  rpcUrls: {
+    default: { 
+      http: ['https://rpc-vanguard.vanarchain.com']},
+  },
+  blockExplorers: {
+    default: { name: 'Vanguard Explorer', url: 'https://explorer-vanguard.vanarchain.com' },
+  },
+}
+const chains = [mainnet, polygon, arbitrum, vanarChain] 
 
 const wagmiConfig = defaultWagmiConfig({ chains, projectId, metadata })
 createWeb3Modal({
@@ -67,7 +79,7 @@ createWeb3Modal({
 
 //new 
 export const config = createConfig({
-  chains: [mainnet, sepolia],
+  chains: [mainnet, sepolia, vanarChain],
   connectors:[
     injected(),
     walletConnect({projectId}),
@@ -78,7 +90,8 @@ export const config = createConfig({
   transports: {
     [mainnet.id]: http('https://mainnet.infura.io/v3/'),
     [sepolia.id]: http(),
-    [polygon.id]: http('https://polygon-rpc.com')
+    [polygon.id]: http('https://polygon-rpc.com'),
+    [vanarChain.id]:http('https://explorer-vanguard.vanarchain.com')
   },
 })
  const ButtonsContainer = styled('div', {
