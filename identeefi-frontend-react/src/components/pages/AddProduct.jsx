@@ -10,6 +10,7 @@ import dayjs from 'dayjs';
 import useAuth from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import Geocode from "react-geocode";
+// import pinataSDK  from "@pinata/sdk";
 
 const getEthereumObject = () => window.ethereum;
 
@@ -55,6 +56,8 @@ const AddProduct = () => {
     const [name, setName] = useState("");
     const [brand, setBrand] = useState("");
     const [description, setDescription] = useState("");
+    //expiry
+    const [timeInDays,setTimeInDays] = useState("");
     const [image, setImage] = useState({
         file: [],
         filepreview: null
@@ -177,6 +180,94 @@ const AddProduct = () => {
         })
     }
 
+    // const registerProduct = async (e) => {
+    //     e.preventDefault();
+
+    //     try {
+    //         const { ethereum } = window;
+
+    //         if (ethereum) {
+    //             const provider = new ethers.providers.Web3Provider(ethereum);
+    //             const signer = provider.getSigner();
+    //             const productContract = new ethers.Contract(CONTRACT_ADDRESS, contractABI, signer);
+
+    //             console.log("here")
+    //             //pinata
+    //             const pinata = new pinataSDK(process.env.PINATA_API_KEY,process.env.PINATA_SECRET_API_KEY)
+    //             try {
+                    
+    //                 const dataToPin = {
+    //                     name,
+    //                     brand,
+    //                     serialNumber,
+    //                     description,
+    //                     imageFileName: image.file.name,
+    //                     manuName,
+    //                     manuLocation,
+    //                     manuDate: manuDate.toString()
+    //                 }
+
+    //                 const dataString = JSON.stringify(dataToPin);
+                    
+    //                 const body ={
+    //                     message:"Product Details",
+    //                     data: dataString
+    //                 }
+                    
+    //                 const options = {
+    //                     pinataMetaData :{
+    //                         name:'ProductDetails',
+    //                         keyvalues:{
+    //                             serialNumber
+    //                         },
+    //                         pinataOptions:{
+    //                             cidVersion:0
+    //                         }
+    //                     }
+    //                 }
+
+    //                 pinata.pinJSONToIPFS(body,options).then(async (res)=>{
+    //                     console.log("pinata pin",res)
+
+    //                     //increasetimestamp for product expiry
+    //                     const expiryDurationDays = parseInt(timeInDays);
+    //                     const blockTimeStamp= (await provider.getBlock("latest")).timestamp;
+    //                     const expirationTimestamp = blockTimeStamp + (expiryDurationDays * 24 * 3600)
+                        
+    //                     // write transactions
+    //                     //  const registerTxn = await productContract.registerProduct(name, brand, serialNumber, description.replace(/,/g, ';'), image.file.name, manuName, manuLocation, manuDate.toString());
+    //                     const registerTxn = await productContract.registerProduct(serialNumber,res.IpfsHash, expirationTimestamp);
+    //                     if(!registerTxn){
+    //                      console.log("RegisterTx error ",registerTxn)
+    //                     }
+    //                     console.log("Mining (Registering Product) ...", registerTxn.hash);
+    //                     setLoading("Mining (Register Product) ...", registerTxn.hash);
+                        
+    //                     await registerTxn.wait();
+    //                     console.log("Mined (Register Product) --", registerTxn.hash);
+    //                     setLoading("Mined (Register Product) --", registerTxn.hash);
+                        
+    //                 }).catch((err)=>{
+    //                     console.error(err)
+    //                 })
+    //             } catch (error) {
+    //                 console.error("Unable to pin to IPFS")
+    //             }
+
+    //             generateQRCode(serialNumber);
+
+    //             const product = await productContract.getProduct(serialNumber);
+
+    //             console.log("Retrieved product...", product);
+    //             setLoading("");
+
+    //         } else {
+    //             console.log("Ethereum object doesn't exist!");
+    //         }
+    //     } catch (error) {
+    //         console.log(error);
+    //     }
+    // }
     const registerProduct = async (e) => {
         e.preventDefault();
 
@@ -192,6 +283,8 @@ const AddProduct = () => {
 
                 // write transactions
                 const registerTxn = await productContract.registerProduct(name, brand, serialNumber, description.replace(/,/g, ';'), image.file.name, manuName, manuLocation, manuDate.toString());
+                // const registerTxn = await productContract.registerProduct(serialNumber,res.IpfsHash, expirationTimestamp);
+
                 console.log("Mining (Registering Product) ...", registerTxn.hash);
                 setLoading("Mining (Register Product) ...", registerTxn.hash);
 
@@ -213,7 +306,6 @@ const AddProduct = () => {
             console.log(error);
         }
     }
-
     const getCurrentTimeLocation = () => {
         setManuDate(dayjs().unix())
         navigator.geolocation.getCurrentPosition(function(position) {

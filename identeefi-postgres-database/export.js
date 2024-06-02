@@ -10,7 +10,6 @@ const client = new Client({
     password: "postgres",
     database: "postgres"
 });
-
 client.connect();
 
 // const csvFilePath = '/home/muhammad/Desktop/FYP/anti-postgres/anti-counterfeit-product-identification-system-using-blockchain/identeefi-postgres-database/auth.csv';
@@ -59,7 +58,7 @@ async function createAccount(username, password, role){
     })
 }
 createAccount("admin","admin","admin");
-createAccount("supp","supp","supplier");
+createAccount("supplierhoon","supp","supplier");
 createAccount("manu","manu","manufacturer");
 createAccount("retailer","retailer","retailer");
 

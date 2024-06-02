@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { Box, Button as Btn } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
 import { useState, useEffect } from 'react';
-
+import WalletConnect from './WalletConnect';
 
 const getEthereumObject = () => window.ethereum;
 
@@ -92,10 +92,10 @@ const Supplier = () => {
                 <Link to="/scanner">
                     <Button className="btns" buttonStyle='btn--long' buttonSize='btn--large'>Update Product</Button>
                 </Link>
-
-                {!currentAccount && (
+               <WalletConnect/>
+                {/* {!currentAccount && (
                     <Button className="btns" buttonStyle='btn--long' buttonSize='btn--large' onClick={connectWallet}>Connect Wallet</Button>
-                )}
+                )} */}
             </div>
         </div>
     );

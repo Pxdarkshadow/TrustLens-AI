@@ -43,7 +43,7 @@ export default function Login() {
                 {
                     headers: { 'Content-Type': 'application/json' },
                 });
-
+              console.log(res)
             console.log(res?.data[0])
 
             if (res?.data.length === 0) {

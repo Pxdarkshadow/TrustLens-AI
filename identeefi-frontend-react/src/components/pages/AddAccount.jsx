@@ -7,7 +7,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 
 const options = ["manufacturer", "supplier", "retailer"]
-
+{console.log("hellp")}
 const AddAccount = () => {
     const [user, setUser] = useState('');
     const [pwd, setPwd] = useState('');
