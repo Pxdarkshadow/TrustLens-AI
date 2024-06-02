@@ -10,6 +10,8 @@ import dayjs from 'dayjs';
 import useAuth from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import Geocode from "react-geocode";
+import { color } from '@mui/system';
+import { red } from '@mui/material/colors';
 // import pinataSDK  from "@pinata/sdk";
 
 const getEthereumObject = () => window.ethereum;
@@ -340,14 +342,18 @@ const AddProduct = () => {
         const res = await axios.get("http://localhost:5000/product/serialNumber");
 
         const existingSerialNumbers = res.data.map((product) => product.serialnumber);
-        existingSerialNumbers.push(serialNumber);
+        // existingSerialNumbers.push(serialNumber);
          
         // checking for duplicated serial number
-        const duplicates = existingSerialNumbers.filter((item, index) => existingSerialNumbers.indexOf(item) != index)
-        console.log("duplicates: ", duplicates)
-        const isDuplicate = duplicates.length >= 1;
-
-        setIsUnique(!isDuplicate);   
+        const duplicates = existingSerialNumbers.filter((item) => item === serialNumber)
+        console.log("duplicates: ", duplicates, duplicates.length)
+        // const isDuplicate = duplicates.length >= 1;
+      if(duplicates.length != 0){
+        setIsUnique(false)
+    }else {
+        existingSerialNumbers.push(serialNumber);
+          setIsUnique(true);
+ }       // setIsUnique(!isDuplicate);   
         console.log(existingSerialNumbers)
         console.log("isUnique: ", isUnique)
     }
@@ -367,16 +373,16 @@ const AddProduct = () => {
         console.log("manufactured at: ", manuLocation);
         console.log("manufactured by: ", manuName);
 
-        checkUnique();
-
+        await checkUnique();
+   console.log("add product isUnique",isUnique)
         if(isUnique){
             uploadImage(image);
             addProductDB(e); // add product to database
             setLoading("Please pay the transaction fee to update the product details...")
             await registerProduct(e);
-        }
-
-        setIsUnique(true);
+        }   
+       
+        // setIsUnique(true);
     }
 
     return (
@@ -490,22 +496,33 @@ const AddProduct = () => {
                         </Button>
       
                     </div> : null}
+                
 
-                    {loading === "" ? null
-                        : <Typography
-                            variant="body2"
-                            sx={{
-                                textAlign: "center", marginTop: "3%"
-                            }}
-                        > {
-                            loading.length === 66 ? <Link href={`${explorerBaseUrl}${loading}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                          See the Transaction on Block Explorer
-                          </Link> : loading
-                        }
-                        </Typography>
+                    {
+                        isUnique ? (
+                            loading !== "" && (
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        textAlign: "center", marginTop: "3%"
+                                    }}
+                                >
+                                    {
+                                        loading.length === 66 ? (
+                                            <Link href={`${explorerBaseUrl}${loading}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                See the Transaction on Block Explorer
+                                            </Link>
+                                        ) : loading
+                                    }
+                                </Typography>
+                            )
+                        ) : (
+                            <p style={{ textAlign: 'center', color: 'red' }}>Product already exists</p>
+
+                        )
                     }
 
                     <Button
