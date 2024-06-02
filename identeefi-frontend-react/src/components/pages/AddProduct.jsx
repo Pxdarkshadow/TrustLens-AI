@@ -1,6 +1,6 @@
 import { Box, Paper, Typography } from '@mui/material';
 import bgImg from '../../img/bg.png';
-import { TextField, Button } from '@mui/material';
+import { TextField, Button, Link  } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { ethers } from "ethers";
 import axios from 'axios';
@@ -13,7 +13,7 @@ import Geocode from "react-geocode";
 // import pinataSDK  from "@pinata/sdk";
 
 const getEthereumObject = () => window.ethereum;
-
+const explorerBaseUrl = 'https://explorer-vanguard.vanarchain.com/tx/';
 /*
  * This function returns the first linked account found.
  * If there is no account linked, it will return null.
@@ -282,15 +282,15 @@ const AddProduct = () => {
                 console.log("here")
 
                 // write transactions
-                const registerTxn = await productContract.registerProduct(name, brand, serialNumber, description.replace(/,/g, ';'), image.file.name, manuName, manuLocation, manuDate.toString());
+                let registerTxn = await productContract.registerProduct(name, brand, serialNumber, description.replace(/,/g, ';'), image.file.name, manuName, manuLocation, manuDate.toString());
                 // const registerTxn = await productContract.registerProduct(serialNumber,res.IpfsHash, expirationTimestamp);
-
                 console.log("Mining (Registering Product) ...", registerTxn.hash);
                 setLoading("Mining (Register Product) ...", registerTxn.hash);
-
+                
+                // registerTxn= await registerTxn.wait();
                 await registerTxn.wait();
                 console.log("Mined (Register Product) --", registerTxn.hash);
-                setLoading("Mined (Register Product) --", registerTxn.hash);
+                setLoading(registerTxn.hash);
 
                 generateQRCode(serialNumber);
 
@@ -497,8 +497,14 @@ const AddProduct = () => {
                             sx={{
                                 textAlign: "center", marginTop: "3%"
                             }}
-                        >
-                            {loading}
+                        > {
+                            loading.length === 66 ? <Link href={`${explorerBaseUrl}${loading}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                          See the Transaction on Block Explorer
+                          </Link> : loading
+                        }
                         </Typography>
                     }
 
