@@ -22,6 +22,7 @@ const metadata = {
   url: 'https://web3modal.com', // origin must match your domain & subdomain
   icons: ['https://avatars.githubusercontent.com/u/37784886']
 }
+
 const vanarChain = {
   id: 0x13308,
   name: 'Vanguard',
@@ -98,7 +99,7 @@ const handleClick =()=>{
     <WagmiProvider config={config}>
     <QueryClientProvider client={queryClient}>
    
-      <w3m-button onClick={handleClick}/>
+      <w3m-button onClick={handleClick} size='md'/>
     </QueryClientProvider>
   </WagmiProvider>
   );

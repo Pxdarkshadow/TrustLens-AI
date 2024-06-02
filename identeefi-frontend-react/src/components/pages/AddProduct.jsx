@@ -12,6 +12,7 @@ import { useNavigate } from 'react-router-dom';
 import Geocode from "react-geocode";
 import { color } from '@mui/system';
 import { red } from '@mui/material/colors';
+import WalletConnect from './WalletConnect';
 // import pinataSDK  from "@pinata/sdk";
 
 const getEthereumObject = () => window.ethereum;
@@ -400,6 +401,15 @@ const AddProduct = () => {
             zIndex: -2,
             overflowY: "scroll"
         }}>
+             <Box
+                sx={{
+                    position: 'absolute',
+                    top: 20,
+                    right: 20,
+                }}
+            >
+                <WalletConnect />
+            </Box>
             <Paper elevation={3} sx={{ width: "400px", margin: "auto", marginTop: "10%", marginBottom: "10%", padding: "3%", backgroundColor: "#e3eefc" }}>
                 <Typography
                     variant="h2"
@@ -557,6 +567,7 @@ const AddProduct = () => {
                 </form>
 
             </Paper>
+          
 
         </Box>
     );

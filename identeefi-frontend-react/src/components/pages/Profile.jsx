@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import useAuth from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
-
+import WalletConnect from './WalletConnect';
 const Profile = () => {
     const [name, setName] = useState([]);
     const [description, setDescription] = useState([]);
@@ -55,6 +55,15 @@ const Profile = () => {
             zIndex: -2,
             overflowY: "scroll"
         }}>
+              <Box
+                sx={{
+                    position: 'absolute',
+                    top: 20,
+                    right: 20,
+                }}
+            >
+                <WalletConnect />
+                </Box>
             <Paper elevation={3} sx={{
                 width: "400px", margin: "auto", marginTop: "10%", marginBottom: "10%", padding: "3%", backgroundColor: "#e3eefc"
             }}>

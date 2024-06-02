@@ -10,8 +10,57 @@ import WalletButtons from '../../components/WalletButtons/';
 import  ButtonContainer  from './styles.jsx';
 import { ConnectionType } from '../../connection/'
 import WalletConnect from './WalletConnect';
+import { arbitrum, mainnet, polygon, sepolia,bscTestnet } from 'wagmi/chains'
+import { defaultWagmiConfig } from '@web3modal/wagmi/react/config'
+
 // import Web3ModalProvider from '@components/wagmi';
 import { useAccount } from 'wagmi';
+
+// 1. Get projectId at https://cloud.walletconnect.com
+const projectId = '7236c984a38479e85f91b945bd9076a8'
+if(!projectId){
+  throw new Error("Pls provide project id")
+}
+// 2. Create wagmiConfig
+const metadata = {
+  name: 'Web3Modal',
+  description: 'Web3Modal Example',
+  url: 'https://web3modal.com', // origin must match your domain & subdomain
+  icons: ['https://avatars.githubusercontent.com/u/37784886']
+}
+
+const vanarChain = {
+  id: 0x13308,
+  name: 'Vanguard',
+  nativeCurrency: { name: 'Vanar', symbol: 'VG', decimals: 18 },
+  rpcUrls: {
+    default: { 
+      http: ['https://rpc-vanguard.vanarchain.com']},
+  },
+  blockExplorers: {
+    default: { name: 'Vanguard Explorer', url: 'https://explorer-vanguard.vanarchain.com' },
+  },
+}
+
+const chains = [mainnet, arbitrum,polygon,sepolia,vanarChain,bscTestnet]
+const config = defaultWagmiConfig({
+  chains,
+  projectId,
+  metadata,
+  enableEmail: true
+ // Optional - Override createConfig parameters
+})
+
+// 3. Create modal
+createWeb3Modal({
+  wagmiConfig: config,
+  projectId,
+  allowUnsupportedChain: true,
+  themeMode:'dark',
+  enableAnalytics: true, // Optional - defaults to your Cloud configuration
+  enableOnramp: true // Optional - false as default
+})
+
 // import { useWeb3React } from '@web3-react/core'
 
 // import { getConnection } from 'connection';
@@ -51,7 +100,13 @@ const Manufacturer = () => {
     const [currentAccount, setCurrentAccount] = useState('');
     // const [isConnected, setIsConnected] = useState(false)
     // const navigate = useNavigate();
-
+    const {isConnected,address,status} =  useAccount({
+        config
+      });
+    useEffect(()=>{
+console.log('isConnectedd:',isConnected)
+    },[])
+      
     useEffect(() => {
         findMetaMaskAccount().then((account) => {
             if (account !== null) {
@@ -86,6 +141,11 @@ const Manufacturer = () => {
     //         alert("Please connect your wallet to proceed.");
     //     }
     // };
+    const handleProfileClick = (e)=>{
+        if(isConnected){
+            <Link to="/profile" />
+        }
+    }
     useEffect(()=>{
         if(!currentAccount){
             console.log("Current account:",currentAccount)
@@ -105,6 +165,15 @@ const Manufacturer = () => {
     // }, [isConnected, address]);
     return (
         <div className="role-container">
+             <Box
+                sx={{
+                    position: 'absolute',
+                    top: 20,
+                    right: 20,
+                }}
+            >
+                <WalletConnect />
+            </Box>
             <div className="role-container-box">
                 <Box
                     sx={{                        
@@ -113,7 +182,7 @@ const Manufacturer = () => {
                         right: 20,
                     }}
                 >
-                    <Btn href="/login" endIcon={<LogoutIcon />}>Logout</Btn>                    
+                    <Btn  href="/login" endIcon={<LogoutIcon />}>Logout</Btn>                    
                 </Box>
 {
 console.log("Manu log res0")
@@ -124,16 +193,16 @@ console.log("Manu log res0")
               
                 <Link to="/profile" >
 
-                    <Button className="btns" buttonStyle='btn--long' buttonSize='btn--large' >Check Profile</Button>
+                    <Button className="btns" buttonStyle='btn--long'  buttonSize='btn--large' >Check Profile</Button>
                 </Link>
 
                 <Link to="/add-product">
-                    <Button className="btns" buttonStyle='btn--long' buttonSize='btn--large'>Add Product</Button>
+                    <Button  className="btns" buttonStyle='btn--long' buttonSize='btn--large'>Add Product</Button>
                 </Link>
             {/* Wallet Connect */}
                {/* <button onClick={()=> setIsConnected(true)}> */}
 
-                <WalletConnect/>
+                <WalletConnect />
                {/* </button> */}
                 {/* <Web3ModalProvider /> */}
                 {/*
