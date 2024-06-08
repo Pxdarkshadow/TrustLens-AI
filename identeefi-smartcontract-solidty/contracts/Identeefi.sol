@@ -3,7 +3,7 @@ pragma solidity ^0.8.17;
 
 import "hardhat/console.sol";
 // import {GnosisSafe} from "./GnosisSafe.sol";
-import {IGnosisSafe} from "./interface/IGnosisSafe.sol";
+// import {IGnosisSafe} from "./interface/IGnosisSafe.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -19,36 +19,51 @@ contract Identeefi is Ownable {
 address signer;
     struct Product {
         string serialNumber;
+        string name;
+        string description;
+        string brand;
+        string image;
+
         mapping(uint => ProductHistory) history;
         uint historySize;
     }
 
     mapping(string => Product) products;
 
+    // struct ProductHistory {
+        
+
+    //     uint id;
+    //      string serialNumber;
+    //     string hash;
+    //     string location;
+    //     uint256 timestamp;
+    //     bool isSold;
+    // }
     struct ProductHistory {
-         string serialNumber;
         uint id;
-        string hash;
+        string actor;
+        string location;
         uint256 timestamp;
         bool isSold;
     }
 
+
     struct PendingProduct {
         string serialNumber;
-        string hash;
+        string actor;
         uint256 timestamp;
         bool isApproved;
     }
     mapping(string => PendingProduct) pendingProducts;
 
-    constructor(address _gnosisSafe) {
-        gnosisSafe = _gnosisSafe;
+    constructor() {
+      
            signer = owner();
     }
 
     function registerProduct(
-        string memory _serialNumber,
-        string memory _hash,
+       string memory _name, string memory _brand, string memory _serialNumber, string memory _description, string memory _image,  string memory _actor, string memory _location,
         uint256 _increaseTimeStamp,
         bytes calldata signature
     ) public returns (bool) {
@@ -57,15 +72,16 @@ address signer;
             "registerProduct: Increase timestamp shouldn't be equal to block.timestamp"
         );
 
-      bytes32[] memory r;
-        bytes32[] memory s;
-        uint8[] memory v;
+    //   bytes32[] memory r;
+    //     bytes32[] memory s;
+    //     uint8[] memory v;
         address[] memory owners = new address[](1);
         owners[0] = signer;
         uint256[] memory indices = new uint256[](1);
         indices[0] = 0;
+    string memory serialNumber =_serialNumber;
         bytes32 message = keccak256(abi.encode(_serialNumber));
-      console.log("signer in register",signer);
+    
         _validate(signature, message, signer);
 
  
@@ -104,55 +120,65 @@ address signer;
         // );
 
         // require(success, "Gnosis Safe transaction failed");
+       Product storage p = products[serialNumber];
 
-
-
-        PendingProduct storage p = pendingProducts[_serialNumber];
-
+        p.name = _name;
+        p.brand = _brand;
         p.serialNumber = _serialNumber;
-        p.hash = _hash;
-        p.timestamp = _increaseTimeStamp;
-        p.isApproved = true;
-        // p.historySize = 0;
+        p.description = _description;
+        p.image = _image;
+        p.historySize = 0;
+      
 
-        addProductHistory(_serialNumber, _hash, _increaseTimeStamp, false);
+
+        PendingProduct storage q = pendingProducts[_serialNumber];
+
+        q.serialNumber = _serialNumber;
+        q.actor = _actor;
+        q.timestamp = _increaseTimeStamp;
+        q.isApproved = true;
+       
+
+        addProductHistory(_serialNumber,_actor, _location, _increaseTimeStamp, false);
+
 
         emit ProductRegistered(_serialNumber);
         return true;
     }
 
 
-    function finalizeProductApproval(string memory _serialNumber) public {
-        require(
-            msg.sender == gnosisSafe,
-            "Unauthorized: Only Gnosis Safe can call this function"
-        );
-        PendingProduct storage pendingProduct = pendingProducts[_serialNumber];
-        require(
-            bytes(pendingProduct.serialNumber).length != 0,
-            "Product not found"
-        );
-        require(!pendingProduct.isApproved, "Product already approved");
+    // function finalizeProductApproval(string memory _serialNumber) public {
+    //     require(
+    //         msg.sender == gnosisSafe,
+    //         "Unauthorized: Only Gnosis Safe can call this function"
+    //     );
+    //     PendingProduct storage pendingProduct = pendingProducts[_serialNumber];
+    //     require(
+    //         bytes(pendingProduct.serialNumber).length != 0,
+    //         "Product not found"
+    //     );
+    //     require(!pendingProduct.isApproved, "Product already approved");
 
-        pendingProduct.isApproved = true;
+    //     pendingProduct.isApproved = true;
 
-        Product storage p = products[_serialNumber];
-        p.serialNumber = _serialNumber;
-        p.historySize = 0;
+    //     Product storage p = products[_serialNumber];
+    //     p.serialNumber = _serialNumber;
+    //     p.historySize = 0;
 
-        addProductHistory(
-            _serialNumber,
-            pendingProduct.hash,
-            pendingProduct.timestamp,
-            false
-        );
+    //     addProductHistory(
+    //         _serialNumber,
+    //         pendingProduct.hash,
+    //         pendingProduct.timestamp,
+    //         false
+    //     );
 
-        emit ProductApproved(_serialNumber);
-    }
+    //     emit ProductApproved(_serialNumber);
+    // }
 
     function addProductHistory(
         string memory _serialNumber,
-        string memory _hash,
+        string memory _actor,
+        string memory _location,
         uint256 _timestamp,
         bool _isSold
     ) public {
@@ -163,16 +189,17 @@ address signer;
 
         Product storage p = products[_serialNumber];
         p.historySize++;
-        p.serialNumber = _serialNumber;
+        // p.serialNumber = _serialNumber;
         p.history[p.historySize] = ProductHistory(
-            _serialNumber,
+         
             p.historySize,
-            _hash,
+            _actor,
+            _location,
             _timestamp,
             _isSold
         );
 
-        console.log("Product History added: %s", p.history[p.historySize].hash);
+        console.log("Product History added: %s", p.history[p.historySize].actor);
         console.log('serial number',p.serialNumber);
     }
 
