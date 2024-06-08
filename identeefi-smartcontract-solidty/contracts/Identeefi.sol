@@ -26,6 +26,7 @@ address signer;
     mapping(string => Product) products;
 
     struct ProductHistory {
+         string serialNumber;
         uint id;
         string hash;
         uint256 timestamp;
@@ -63,45 +64,49 @@ address signer;
         owners[0] = signer;
         uint256[] memory indices = new uint256[](1);
         indices[0] = 0;
-        bytes32 message = keccak256(abi.encodePacked(_serialNumber));
+        bytes32 message = keccak256(abi.encode(_serialNumber));
+      console.log("signer in register",signer);
         _validate(signature, message, signer);
 
-  
+ 
 
-        assembly {
+        // assembly {
             
-            let signaturePtr := mload(0x40)
+        //     let signaturePtr := mload(0x40)
 
-            // Copy the signature data from calldata to memory
-            calldatacopy(signaturePtr, 0, 97)
+        //     // Copy the signature data from calldata to memory
+        //     calldatacopy(signaturePtr, 0, 97)
 
-            // load the value of the first 32 bytes (r) from the signature in memory
-            r := mload(add(signaturePtr, 32))
+        //     // load the value of the first 32 bytes (r) from the signature in memory
+        //     r := mload(add(signaturePtr, 32))
 
-            // load the value of the second 32 bytes (s) from the signature in memory
-            s := mload(add(signaturePtr, 64))
+        //     // load the value of the second 32 bytes (s) from the signature in memory
+        //     s := mload(add(signaturePtr, 64))
 
-            // load the last byte (v) from the signature in memory and convert it to a uint8 value
-            v := byte(0, mload(add(signaturePtr, 96)))
-        }
+        //     // load the last byte (v) from the signature in memory and convert it to a uint8 value
+        //     v := byte(0, mload(add(signaturePtr, 96)))
+        // }
 
-        bytes memory data = abi.encodeWithSignature(
-            "finalizeProductApproval(string)",
-            _serialNumber
-        );
-        bool success = IGnosisSafe(gnosisSafe).executeTransaction(
-            address(this),
-            0,
-            data,
-            0,
-            v,
-            r,
-            s,
-            owners,
-            indices
-        );
+        // bytes memory data = abi.encodeWithSignature(
+        //     "finalizeProductApproval(string)",
+        //     _serialNumber
+        // );
+        // bool success = IGnosisSafe(gnosisSafe).executeTransaction(
+        //     address(this),
+        //     0,
+        //     data,
+        //     0,
+        //     v,
+        //     r,
+        //     s,
+        //     owners,
+        //     indices
+        // );
 
-        require(success, "Gnosis Safe transaction failed");
+        // require(success, "Gnosis Safe transaction failed");
+
+
+
         PendingProduct storage p = pendingProducts[_serialNumber];
 
         p.serialNumber = _serialNumber;
@@ -158,7 +163,9 @@ address signer;
 
         Product storage p = products[_serialNumber];
         p.historySize++;
+        p.serialNumber = _serialNumber;
         p.history[p.historySize] = ProductHistory(
+            _serialNumber,
             p.historySize,
             _hash,
             _timestamp,
@@ -166,6 +173,7 @@ address signer;
         );
 
         console.log("Product History added: %s", p.history[p.historySize].hash);
+        console.log('serial number',p.serialNumber);
     }
 
     function getProduct(
@@ -174,12 +182,12 @@ address signer;
         ProductHistory[] memory pHistory = new ProductHistory[](
             products[_serialNumber].historySize
         );
-
+  
         for (uint i = 0; i < products[_serialNumber].historySize; i++) {
             pHistory[i] = products[_serialNumber].history[i + 1];
         }
-
-        return (products[_serialNumber].serialNumber, pHistory);
+  
+        return (products[_serialNumber].serialNumber, pHistory );
     }
 
     function _validate(
@@ -191,8 +199,13 @@ address signer;
             abi.encodePacked("\x19\x01", getDomainSeparator(), encodeData)
         );
         address recoveredAddress = ECDSA.recover(digest, signature);
-
-        // console.logBytes32(digest);
+//         console.log("In contract----");
+//        console.logBytes32(getDomainSeparator());
+//         console.logBytes32(digest);
+//         console.logBytes(signature);
+//        console.log("message"); console.logBytes32(encodeData);
+//    console.log(_signer, recoveredAddress);
+//         console.log("In contract----");
 
         // Explicitly disallow authorizations for address(0) as ecrecover returns address(0) on malformed messages
         require(
