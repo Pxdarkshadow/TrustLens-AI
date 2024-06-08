@@ -2,31 +2,21 @@
 pragma solidity ^0.8.17;
 
 import "hardhat/console.sol";
-import {GnosisSafe} from "./GnosisSafe.sol";
-// import {IGnosisSafe} from "./interface/IGnosisSafe.sol";
+// import {GnosisSafe} from "./GnosisSafe.sol";
+import {IGnosisSafe} from "./interface/IGnosisSafe.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-interface IGnosisSafe {
-    function executeTransaction(
-        address to,
-        uint256 value,
-        bytes memory data,
-        uint8 operation,
-        uint8[] memory v,
-        bytes32[] memory r,
-        bytes32[] memory s,
-        address[] memory owners,
-        uint256[] memory indices
-    ) external returns (bool success);
-}
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+
 contract Identeefi is Ownable {
+    
     event ProductRegistered(string serialNumber);
     event ProductApproved(string serialNumber);
     // IGnosisSafe _IGnosisSafe;
     // address public owner;
     address public gnosisSafe;
-
+address signer;
     struct Product {
         string serialNumber;
         mapping(uint => ProductHistory) history;
@@ -50,51 +40,51 @@ contract Identeefi is Ownable {
     }
     mapping(string => PendingProduct) pendingProducts;
 
-    constructor(address _gnosisSafe)  {
-        
-         gnosisSafe = _gnosisSafe;
+    constructor(address _gnosisSafe) {
+        gnosisSafe = _gnosisSafe;
+           signer = owner();
     }
 
     function registerProduct(
         string memory _serialNumber,
         string memory _hash,
-        uint256 _increaseTimeStamp
+        uint256 _increaseTimeStamp,
+        bytes calldata signature
     ) public returns (bool) {
         require(
             block.timestamp != _increaseTimeStamp,
             "registerProduct: Increase timestamp shouldn't be equal to block.timestamp"
         );
 
-        PendingProduct storage p = pendingProducts[_serialNumber];
+      bytes32[] memory r;
+        bytes32[] memory s;
+        uint8[] memory v;
+        address[] memory owners = new address[](1);
+        owners[0] = signer;
+        uint256[] memory indices = new uint256[](1);
+        indices[0] = 0;
+        bytes32 message = keccak256(abi.encodePacked(_serialNumber));
+        _validate(signature, message, signer);
 
-        p.serialNumber = _serialNumber;
-        p.hash = _hash;
-        p.timestamp = _increaseTimeStamp;
-        p.isApproved = false;
-        // p.historySize = 0;
+  
 
-        addProductHistory(_serialNumber, _hash, _increaseTimeStamp, false);
-        emit ProductRegistered(_serialNumber);
-        return true;
-    }
+        assembly {
+            
+            let signaturePtr := mload(0x40)
 
-    //new function added
-    function apporoveProduct(
-        string memory _serialNumber,
-        uint8[] memory v,
-        bytes32[] memory r,
-        bytes32[] memory s,
-        address[] memory owners,
-        uint256[] memory indices
-    ) public onlyOwner {
-        PendingProduct storage pendingProduct = pendingProducts[_serialNumber];
-        require(
-            bytes(pendingProduct.serialNumber).length != 0,
-            "Product not found"
-        );
-        require(!pendingProduct.isApproved, "Product already approved");
+            // Copy the signature data from calldata to memory
+            calldatacopy(signaturePtr, 0, 97)
 
-        //approve tx
+            // load the value of the first 32 bytes (r) from the signature in memory
+            r := mload(add(signaturePtr, 32))
+
+            // load the value of the second 32 bytes (s) from the signature in memory
+            s := mload(add(signaturePtr, 64))
+
+            // load the last byte (v) from the signature in memory and convert it to a uint8 value
+            v := byte(0, mload(add(signaturePtr, 96)))
+        }
+
         bytes memory data = abi.encodeWithSignature(
             "finalizeProductApproval(string)",
             _serialNumber
@@ -111,26 +101,49 @@ contract Identeefi is Ownable {
             indices
         );
 
-                require(success, "Gnosis Safe transaction failed");
+        require(success, "Gnosis Safe transaction failed");
+        PendingProduct storage p = pendingProducts[_serialNumber];
 
+        p.serialNumber = _serialNumber;
+        p.hash = _hash;
+        p.timestamp = _increaseTimeStamp;
+        p.isApproved = true;
+        // p.historySize = 0;
+
+        addProductHistory(_serialNumber, _hash, _increaseTimeStamp, false);
+
+        emit ProductRegistered(_serialNumber);
+        return true;
     }
-    function finalizeProductApproval(string memory _serialNumber) public {
-        require(msg.sender == gnosisSafe, "Unauthorized: Only Gnosis Safe can call this function");
-        PendingProduct storage pendingProduct = pendingProducts[_serialNumber];
-        require(bytes(pendingProduct.serialNumber).length != 0,"Product not found");
-        require(!pendingProduct.isApproved,"Product already approved");
-        
-        pendingProduct.isApproved =true;
-        
-        Product storage p = products[_serialNumber];
-        p.serialNumber =_serialNumber;
-        p.historySize=0;
 
-        addProductHistory(_serialNumber, pendingProduct.hash, pendingProduct.timestamp, false);
+
+    function finalizeProductApproval(string memory _serialNumber) public {
+        require(
+            msg.sender == gnosisSafe,
+            "Unauthorized: Only Gnosis Safe can call this function"
+        );
+        PendingProduct storage pendingProduct = pendingProducts[_serialNumber];
+        require(
+            bytes(pendingProduct.serialNumber).length != 0,
+            "Product not found"
+        );
+        require(!pendingProduct.isApproved, "Product already approved");
+
+        pendingProduct.isApproved = true;
+
+        Product storage p = products[_serialNumber];
+        p.serialNumber = _serialNumber;
+        p.historySize = 0;
+
+        addProductHistory(
+            _serialNumber,
+            pendingProduct.hash,
+            pendingProduct.timestamp,
+            false
+        );
 
         emit ProductApproved(_serialNumber);
     }
-
 
     function addProductHistory(
         string memory _serialNumber,
@@ -138,7 +151,10 @@ contract Identeefi is Ownable {
         uint256 _timestamp,
         bool _isSold
     ) public {
-    require(pendingProducts[_serialNumber].isApproved, "Unable To add Product, product is not approved");
+        require(
+             pendingProducts[_serialNumber].isApproved,
+            "Unable To add Product, product is not approved"
+        );
 
         Product storage p = products[_serialNumber];
         p.historySize++;
@@ -165,8 +181,66 @@ contract Identeefi is Ownable {
 
         return (products[_serialNumber].serialNumber, pHistory);
     }
+
+    function _validate(
+        bytes calldata signature,
+        bytes32 encodeData, //message
+        address _signer
+    ) internal view {
+        bytes32 digest = keccak256(
+            abi.encodePacked("\x19\x01", getDomainSeparator(), encodeData)
+        );
+        address recoveredAddress = ECDSA.recover(digest, signature);
+
+        // console.logBytes32(digest);
+
+        // Explicitly disallow authorizations for address(0) as ecrecover returns address(0) on malformed messages
+        require(
+            recoveredAddress != address(0) && (recoveredAddress == _signer),
+            "INVALID_SIGNATURE"
+        );
+    }
+
+    function getDomainSeparator() internal view returns (bytes32) {
+        return keccak256(abi.encode("0x01", address(this)));
+    }
 }
 
+    //new function added
+    // function apporoveProduct(
+    //     string memory _serialNumber,
+    //     uint8[] memory v,
+    //     bytes32[] memory r,
+    //     bytes32[] memory s,
+    //     address[] memory owners,
+    //     uint256[] memory indices
+    // ) public onlyOwner {
+    //     PendingProduct storage pendingProduct = pendingProducts[_serialNumber];
+    //     require(
+    //         bytes(pendingProduct.serialNumber).length != 0,
+    //         "Product not found"
+    //     );
+    //     require(!pendingProduct.isApproved, "Product already approved");
+
+    //     //approve tx
+    //     bytes memory data = abi.encodeWithSignature(
+    //         "finalizeProductApproval(string)",
+    //         _serialNumber
+    //     );
+    //     bool success = IGnosisSafe(gnosisSafe).executeTransaction(
+    //         address(this),
+    //         0,
+    //         data,
+    //         0,
+    //         v,
+    //         r,
+    //         s,
+    //         owners,
+    //         indices
+    //     );
+
+    //     require(success, "Gnosis Safe transaction failed");
+    // }
 // function registerProduct(string memory _name, string memory _brand, string memory _serialNumber, string memory _description, string memory _image,  string memory _actor, string memory _location, string memory _timestamp) public {
 //     Product storage p = products[_serialNumber];
 
