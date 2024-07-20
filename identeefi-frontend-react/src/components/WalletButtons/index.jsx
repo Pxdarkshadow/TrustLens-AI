@@ -23,7 +23,7 @@ import { shortenAddress } from '../../utils'
 import Toast from '../modals/Toast'
 import { Box, Button, Grid, Typography, styled } from '@mui/material'
 import ConnectWalletModal from '../modals/ConnectWalletModal'
-import { MetaMaskAvatar } from 'react-metamask-avatar'
+// import { MetaMaskAvatar } from 'react-metamask-avatar'
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown'
 // import  ConnectionType  from '../../connection/index.js';
 

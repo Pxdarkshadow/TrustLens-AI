@@ -13,6 +13,7 @@ import WalletConnect from './WalletConnect';
 import { arbitrum, mainnet, polygon, sepolia,bscTestnet } from 'wagmi/chains'
 import { defaultWagmiConfig } from '@web3modal/wagmi/react/config'
 
+
 // import Web3ModalProvider from '@components/wagmi';
 import { useAccount } from 'wagmi';
 
@@ -99,10 +100,10 @@ const Manufacturer = () => {
     // const {address, isConnected} = useAccount();
     const [currentAccount, setCurrentAccount] = useState('');
     // const [isConnected, setIsConnected] = useState(false)
-    // const navigate = useNavigate();
     const {isConnected,address,status} =  useAccount({
         config
       });
+      const navigate = useNavigate();
     useEffect(()=>{
 console.log('isConnectedd:',isConnected)
     },[])
@@ -142,8 +143,9 @@ console.log('isConnectedd:',isConnected)
     //     }
     // };
     const handleProfileClick = (e)=>{
+        console.log(isConnected)
         if(isConnected){
-            <Link to="/profile" />
+        navigate('/profile');
         }
     }
     useEffect(()=>{
@@ -191,10 +193,11 @@ console.log("Manu log res0")
                 <h2>Welcome:</h2>
                 <h1>Manufacturer</h1>
               
-                <Link to="/profile" >
+                <Link to="/add-product">
 
-                    <Button className="btns" buttonStyle='btn--long'  buttonSize='btn--large' >Check Profile</Button>
-                </Link>
+
+                    <Button className="btns" buttonStyle='btn--long'  buttonSize='btn--large'onClick={handleProfileClick} >Check Profile</Button>
+             </Link>
 
                 <Link to="/add-product">
                     <Button  className="btns" buttonStyle='btn--long' buttonSize='btn--large'>Add Product</Button>
@@ -202,7 +205,7 @@ console.log("Manu log res0")
             {/* Wallet Connect */}
                {/* <button onClick={()=> setIsConnected(true)}> */}
 
-                <WalletConnect />
+                <WalletConnect onClick={connectWallet} />
                {/* </button> */}
                 {/* <Web3ModalProvider /> */}
                 {/*
@@ -210,8 +213,8 @@ console.log("Manu log res0")
                 */}
                  {/* {!currentAccount && (
                     <Button className="btns" buttonStyle='btn--long' buttonSize='btn--large' onClick={connectWallet}>Connect Wallet</Button>
-                )} 
-  */}
+                )}  */}
+ 
 
 
             </div>

@@ -28,8 +28,8 @@ console.log("hello")
      await gnosis.deployed();
      console.log("Gnosis Address: ", gnosis.address);
 
-     Identeefi = await ethers.getContractFactory("Identeefi");
-     identeefi =await Identeefi.deploy(gnosis.address);
+     Identeefi = await ethers.getContractFactory("CounterField");
+     identeefi =await Identeefi.deploy();
      await identeefi.deployed();
      console.log("Identeefi", identeefi.address);
      })
@@ -47,7 +47,13 @@ console.log("hello")
 
     it("should approve a product", async function () {
         const serialNumber = "SN123";
-        const hash = "HASH123";
+        let name ="iphone x";
+        let brand = "Apple";
+        let description = "This is the iphone x";
+        let image  ='apple.png';
+        let location = "California"
+        const actor = "HASH123";
+        // string memory _name, string memory _brand, string memory _serialNumber, string memory _description, string memory _image,  string memory _actor, string memory _location,
         const timestamp = Math.floor(Date.now() / 1000) + 1000;
      console.log(owner.address)
         // const message = ethers.utils.solidityKeccak256(["string"], [serialNumber]);
@@ -75,7 +81,7 @@ console.log("hello")
         signature = `0x${vrs.r.toString('hex')}${vrs.s.toString("hex")}${vrs.v.toString(16)}`;
 
           console.log('signature',signature)
-        await identeefi.connect(accountOne).registerProduct(serialNumber, hash, timestamp,signature);
+        await identeefi.connect(accountOne).registerProduct(name,brand,serialNumber,description,image, actor,location, timestamp,signature);
     
         // Mock signatures and owner addresses
         // const v = [27];
@@ -93,6 +99,10 @@ console.log("hello")
         // console.log(product)
         expect(productSerialNumber).to.equal(serialNumber);
         expect(productHistory.length).to.equal(1);
+
+        let products = await identeefi.getProductTest(serialNumber);
+        console.log("product registered:",products);
+
       });
     }
 

@@ -7,8 +7,10 @@
     "url": "https://paulrberg.com"
   },
   "dependencies": {
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.11",
     "@openzeppelin/contracts": "^4.2.0",
-    "@openzeppelin/contracts-upgradeable": "^4.0.0"
+    "@openzeppelin/contracts-upgradeable": "^4.0.0",
+    "ethereumjs-util": "^7.1.5"
   },
   "devDependencies": {
     "@commitlint/cli": "^9.1.2",

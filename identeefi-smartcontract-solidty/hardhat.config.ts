@@ -29,7 +29,9 @@ const chainIds = {
   ropsten: 3,
   bsctestnet: 97,
   mumbai:80001 ,
-  sepolia:11155111
+  sepolia:11155111,
+  vanar:78600
+
 };
 
 // Ensure that we have all the environment variables we need.
@@ -88,6 +90,15 @@ function createTestnetConfig(network: keyof typeof chainIds): NetworkUserConfig 
     };
     
   }
+  else if(network == "vanar"){
+    const url: string = "https://rpc-vanguard.vanarchain.com";
+    const privateKey:any = process.env.PRIVATE_KEY;
+    return {
+      accounts: [privateKey],
+      chainId: chainIds[network],
+      url,
+    };
+  }
   else if(network == "sepolia"){
     const url: string = "https://sepolia.infura.io/v3/";
     const privateKey:any = process.env.PRIVATE_KEY;
@@ -128,7 +139,9 @@ const config: HardhatUserConfig = {
     mumbai: createTestnetConfig("mumbai"),
     bscmainnet: createTestnetConfig("bscmainnet"),
     matic: createTestnetConfig("matic"),
-    sepolia: createTestnetConfig("sepolia")
+    sepolia: createTestnetConfig("sepolia"),
+    vanar: createTestnetConfig("vanar")
+
   },
   etherscan: {
     // Your API key for Etherscan
@@ -145,6 +158,16 @@ const config: HardhatUserConfig = {
   },
   solidity: {
     compilers: [
+      {
+        version: "0.8.20",
+        settings: {
+          // https://hardhat.org/hardhat-network/#solidity-optimizer-support
+          optimizer: {
+            enabled: true,
+            runs: 1,
+          },
+        },
+      },
       {
         version: "0.8.7",
         settings: {
@@ -175,6 +198,17 @@ const config: HardhatUserConfig = {
           },
         },
       },
+      {
+        version: "0.4.19",
+        settings: {
+          // https://hardhat.org/hardhat-network/#solidity-optimizer-support
+          optimizer: {
+            enabled: true,
+            runs: 1,
+          },
+        },
+      },
+     
       {
         version: "0.6.6",
       },

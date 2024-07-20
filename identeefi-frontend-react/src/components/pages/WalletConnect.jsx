@@ -5,7 +5,7 @@ import { WagmiProvider, useAccount, useConnect, useDisconnect } from 'wagmi'
 import { arbitrum, mainnet, polygon, sepolia,bscTestnet } from 'wagmi/chains'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import Router from '../../components/Router'
-import { useEffect, useState } from 'react'
+import { useEffect, useState ,useRef} from 'react'
 import { Provider } from 'react-redux'
 // 0. Setup queryClient
 const queryClient = new QueryClient()
@@ -55,11 +55,18 @@ createWeb3Modal({
   enableOnramp: true // Optional - false as default
 })
 
-function WalletConnect() {
+function WalletConnect({onClick}) {
 const {isConnected,address,status} =  useAccount({
   config
 });
+// const originalWarn = console.warn;
+// console.warn = (message, ...args) =>{
+//   if (typeof message === 'string' && message.includes('@w3m-frame/IS_CONNECTED_SUCCESS')) {
+//     return;
+//   }
+//   originalWarn.apply(console, [message, ...args]);
 
+// };
 // const  {disconnect,} = useDisconnect({config});
 // useEffect(()=>{
 // console.log("account status:", isConnected);
@@ -88,18 +95,34 @@ const {isConnected,address,status} =  useAccount({
   //     console.log("No connectors available");
   //   }
   // };
+
+  const buttonRef = useRef(null);
+
+  useEffect(() => {
+    if (buttonRef.current) {
+      buttonRef.current.addEventListener('click', onClick);
+    }
+    return () => {
+      if (buttonRef.current) {
+        buttonRef.current.removeEventListener('click', onClick);
+      }
+    };
+  }, [onClick]);
+
 const handleClick =()=>{
   // await new Promise(resolve => setTimeout(resolve, 0));
 
   console.log("handle status",status,isConnected)
 }
+
+
   return (
 
 
     <WagmiProvider config={config}>
     <QueryClientProvider client={queryClient}>
    
-      <w3m-button onClick={handleClick} size='md'/>
+      <w3m-button ref={buttonRef} onClick={handleClick} size='md'/>
     </QueryClientProvider>
   </WagmiProvider>
   );

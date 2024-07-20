@@ -92,7 +92,7 @@ const Supplier = () => {
                 <Link to="/scanner">
                     <Button className="btns" buttonStyle='btn--long' buttonSize='btn--large'>Update Product</Button>
                 </Link>
-               <WalletConnect/>
+               <WalletConnect onClick={connectWallet}/>
                 {/* {!currentAccount && (
                     <Button className="btns" buttonStyle='btn--long' buttonSize='btn--large' onClick={connectWallet}>Connect Wallet</Button>
                 )} */}
