@@ -1,5 +1,5 @@
 import { Box, Paper, Avatar, Typography, Button } from '@mui/material';
-import bgImg from '../../img/bg.png';
+import heroBg from "../../img/herobg.png";
 import Timeline from '@mui/lab/Timeline';
 import TimelineItem from '@mui/lab/TimelineItem';
 import TimelineSeparator from '@mui/lab/TimelineSeparator';
@@ -213,7 +213,7 @@ const Product = () => {
 
     return (
         <Box sx={{
-            backgroundImage: `url(${bgImg})`,
+            backgroundImage: `url(${heroBg})`,
             minHeight: "80vh",
             position: 'absolute',
             left: 0,

@@ -50,4 +50,8 @@ For more information, you can view our user manual:
 [View User Manual](/user-manual.pdf)
 
 
+## VANAR DEPLOYEMENT
+- CONTRACT_ADDRESS (old) 0x0C778A1762BEb8878947E56966E56EC8F476ebAc 
+
+
 

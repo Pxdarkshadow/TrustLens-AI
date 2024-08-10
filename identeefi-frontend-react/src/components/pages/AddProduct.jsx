@@ -1,694 +1,615 @@
-import { Box, Paper, Typography } from '@mui/material'
-import bgImg from '../../img/bg.png'
-import { TextField, Button, Link } from '@mui/material'
-import { useEffect, useState } from 'react'
-import { ethers } from 'ethers'
-import axios from 'axios'
-import abi from '../../utils/Identeefi.json'
-import QRCode from 'qrcode.react'
-import dayjs from 'dayjs'
-import useAuth from '../../hooks/useAuth'
-import { useNavigate } from 'react-router-dom'
-import Geocode from 'react-geocode'
-import { color } from '@mui/system'
-import { red } from '@mui/material/colors'
-import { useAccount } from 'wagmi'
-// import WalletConnect from './WalletConnect';
+import { Box, Paper, Typography } from '@mui/material';
+import heroBg from "../../img/herobg.png";
+import { TextField, Button, Link  } from '@mui/material';
+import { useEffect, useState } from 'react';
+import { ethers } from "ethers";
+import axios from 'axios';
+import abi from '../../utils/Identeefi.json';
+import QRCode from 'qrcode.react';
+import dayjs from 'dayjs';
+import useAuth from '../../hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import Geocode from "react-geocode";
+import { color } from '@mui/system';
+import { red } from '@mui/material/colors';
+import WalletConnect from './WalletConnect';
 // import pinataSDK  from "@pinata/sdk";
 
-const getEthereumObject = () => window.ethereum
-const explorerBaseUrl = 'https://explorer-vanguard.vanarchain.com/tx/'
-
+const getEthereumObject = () => window.ethereum;
+const explorerBaseUrl = 'https://explorer-vanguard.vanarchain.com/tx/';
 /*
  * This function returns the first linked account found.
  * If there is no account linked, it will return null.
  */
 const findMetaMaskAccount = async () => {
-  try {
-    const ethereum = getEthereumObject()
+    try {
+        const ethereum = getEthereumObject();
 
-    /*
-     * First make sure we have access to the Ethereum object.
-     */
-    if (!ethereum) {
-      console.error('Make sure you have Metamask!')
-      alert('Make sure you have Metamask!')
-      return null
-    }
-
-    console.log('We have the Ethereum object', ethereum)
-    const accounts = await ethereum.request({ method: 'eth_accounts' })
-
-    if (accounts.length !== 0) {
-      const account = accounts[0]
-      console.log('Found an authorized account:', account)
-      return account
-    } else {
-      console.error('No authorized account found')
-      return null
-    }
-  } catch (error) {
-    console.error(error)
-    return null
-  }
-}
-
-const AddProduct = () => {
-  const [currentAccount, setCurrentAccount] = useState('')
-  const [serialNumber, setSerialNumber] = useState('')
-  const [name, setName] = useState('')
-  const [brand, setBrand] = useState('')
-  const [description, setDescription] = useState('')
-  //expiry
-  const [timeInDays, setTimeInDays] = useState('')
-  const [image, setImage] = useState({
-    file: [],
-    filepreview: null,
-  })
-  const [qrData, setQrData] = useState('')
-  const [manuDate, setManuDate] = useState('')
-  const [manuLatitude, setManuLatitude] = useState('')
-  const [manuLongtitude, setManuLongtitude] = useState('')
-  const [manuName, setManuName] = useState('')
-  const [loading, setLoading] = useState('')
-  const [manuLocation, setManuLocation] = useState('')
-  const [isUnique, setIsUnique] = useState(true)
-
-  const CONTRACT_ADDRESS = '0x72F823B77bE859306a04a761c1c8e84E55e8aB6F'
-  const contractABI = abi.abi
-
-  const { auth } = useAuth()
-  const navigate = useNavigate()
-
-  useEffect(() => {
-    findMetaMaskAccount().then(account => {
-      if (account !== null) {
-        setCurrentAccount(account)
-      }
-    })
-    getUsername()
-    getCurrentTimeLocation()
-  }, [])
-
-  useEffect(()=>{
-    const {address, isConnected} = useAccount();
-    console.log(isConnected)
-
-  },[isConnected])
-
-  // useEffect(() => {
-  //   Geocode.setApiKey('AIzaSyB5MSbxR9Vuj1pPeGvexGvQ3wUel4znfYY')
-
-  //   Geocode.fromLatLng(manuLatitude, manuLongtitude).then(
-  //     response => {
-  //       const address = response.results[0].formatted_address
-  //       let city, state, country
-  //       for (
-  //         let i = 0;
-  //         i < response.results[0].address_components.length;
-  //         i++
-  //       ) {
-  //         for (
-  //           let j = 0;
-  //           j < response.results[0].address_components[i].types.length;
-  //           j++
-  //         ) {
-  //           switch (response.results[0].address_components[i].types[j]) {
-  //             case 'locality':
-  //               city = response.results[0].address_components[i].long_name
-  //               break
-  //             case 'administrative_area_level_1':
-  //               state = response.results[0].address_components[i].long_name
-  //               break
-  //             case 'country':
-  //               country = response.results[0].address_components[i].long_name
-  //               break
-  //           }
-  //         }
-  //       }
-  //       setManuLocation(address.replace(/,/g, ';'))
-  //       console.log('city, state, country: ', city, state, country)
-  //       console.log('address:', address)
-  //     },
-  //     error => {
-  //       console.error(error)
-  //     },
-  //   )
-  // }, [manuLatitude, manuLongtitude])
-
-  const generateQRCode = async serialNumber => {
-    // const qrCode = await productContract.getProduct(serialNumber); major change
-    const data = CONTRACT_ADDRESS + ',' + serialNumber
-   await setQrData(data)
-    console.log('QR Code: ', qrData)
-  }
-
-  const downloadQR = () => {
-    const canvas = document.getElementById('QRCode')
-    const pngUrl = canvas
-      .toDataURL('image/png')
-      .replace('image/png', 'image/octet-stream')
-    let downloadLink = document.createElement('a')
-    downloadLink.href = pngUrl
-    downloadLink.download = `${serialNumber}.png`
-    document.body.appendChild(downloadLink)
-    downloadLink.click()
-    document.body.removeChild(downloadLink)
-  }
-
-  const handleBack = () => {
-    navigate(-1)
-  }
-
-  const handleImage = async e => {
-    setImage({
-      ...image,
-      file: e.target.files[0],
-      filepreview: URL.createObjectURL(e.target.files[0]),
-    })
-  }
-
-  const getUsername = async e => {
-    const res = await axios
-      .get(`http://localhost:5000/profile/${auth.user}`)
-      .then(res => {
-        console.log(JSON.stringify(res?.data[0]))
-        setManuName(res?.data[0].name)
-      })
-  }
-
-  // to upload image
-  const uploadImage = async image => {
-    const data = new FormData()
-    data.append('image', image.file)
-
-    axios
-      .post('http://localhost:5000/upload/product', data, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      })
-      .then(res => {
-        console.log(res)
-
-        if (res.data.success === 1) {
-          console.log('image uploaded')
+        /*
+        * First make sure we have access to the Ethereum object.
+        */
+        if (!ethereum) {
+            console.error("Make sure you have Metamask!");
+            alert("Make sure you have Metamask!");
+            return null;
         }
-      })
-  }
 
-  // const registerProduct = async (e) => {
-  //     e.preventDefault();
+        console.log("We have the Ethereum object", ethereum);
+        const accounts = await ethereum.request({ method: "eth_accounts" });
 
-  //     try {
-  //         const { ethereum } = window;
-
-  //         if (ethereum) {
-  //             const provider = new ethers.providers.Web3Provider(ethereum);
-  //             const signer = provider.getSigner();
-  //             const productContract = new ethers.Contract(CONTRACT_ADDRESS, contractABI, signer);
-
-  //             console.log("here")
-  //             //pinata
-  //             const pinata = new pinataSDK(process.env.PINATA_API_KEY,process.env.PINATA_SECRET_API_KEY)
-  //             try {
-
-  //                 const dataToPin = {
-  //                     name,
-  //                     brand,
-  //                     serialNumber,
-  //                     description,
-  //                     imageFileName: image.file.name,
-  //                     manuName,
-  //                     manuLocation,
-  //                     manuDate: manuDate.toString()
-  //                 }
-
-  //                 const dataString = JSON.stringify(dataToPin);
-
-  //                 const body ={
-  //                     message:"Product Details",
-  //                     data: dataString
-  //                 }
-
-  //                 const options = {
-  //                     pinataMetaData :{
-  //                         name:'ProductDetails',
-  //                         keyvalues:{
-  //                             serialNumber
-  //                         },
-  //                         pinataOptions:{
-  //                             cidVersion:0
-  //                         }
-  //                     }
-  //                 }
-
-  //                 pinata.pinJSONToIPFS(body,options).then(async (res)=>{
-  //                     console.log("pinata pin",res)
-
-  //                     //increasetimestamp for product expiry
-  //                     const expiryDurationDays = parseInt(timeInDays);
-  //                     const blockTimeStamp= (await provider.getBlock("latest")).timestamp;
-  //                     const expirationTimestamp = blockTimeStamp + (expiryDurationDays * 24 * 3600)
-
-  //                     // write transactions
-  //                     //  const registerTxn = await productContract.registerProduct(name, brand, serialNumber, description.replace(/,/g, ';'), image.file.name, manuName, manuLocation, manuDate.toString());
-  //                     const registerTxn = await productContract.registerProduct(serialNumber,res.IpfsHash, expirationTimestamp);
-  //                     if(!registerTxn){
-  //                      console.log("RegisterTx error ",registerTxn)
-  //                     }
-  //                     console.log("Mining (Registering Product) ...", registerTxn.hash);
-  //                     setLoading("Mining (Register Product) ...", registerTxn.hash);
-
-  //                     await registerTxn.wait();
-  //                     console.log("Mined (Register Product) --", registerTxn.hash);
-  //                     setLoading("Mined (Register Product) --", registerTxn.hash);
-
-  //                 }).catch((err)=>{
-  //                     console.error(err)
-  //                 })
-  //             } catch (error) {
-  //                 console.error("Unable to pin to IPFS")
-  //             }
-
-  //             generateQRCode(serialNumber);
-
-  //             const product = await productContract.getProduct(serialNumber);
-
-  //             console.log("Retrieved product...", product);
-  //             setLoading("");
-
-  //         } else {
-  //             console.log("Ethereum object doesn't exist!");
-  //         }
-  //     } catch (error) {
-  //         console.log(error);
-  //     }
-  // }
-  const registerProduct = async e => {
-
-    e.preventDefault()
-
-    try {
-      const { ethereum } = window
-
-      if (ethereum) {
-        const provider = new ethers.providers.Web3Provider(ethereum);
-        if(!provider){
-          return console.error("no provider")
+        if (accounts.length !== 0) {
+            const account = accounts[0];
+            console.log("Found an authorized account:", account);
+            return account;
+        } else {
+            console.error("No authorized account found");
+            return null;
         }
-        const signer = provider.getSigner()
-        console.log('signer: ', signer)
-        console.log("isConnected",isConnected)
-        const productContract = new ethers.Contract(
-          CONTRACT_ADDRESS,
-          contractABI,
-          signer,
-        )
-
-        console.log('here hello')
-        // write transactions
-        console.log( name,
-          brand,
-          serialNumber,
-          description.replace(/,/g, ';'),
-          image.file.name,
-          manuName,
-          manuLocation,
-          manuDate.toString())
-        let registerTxn = await productContract.registerProduct(
-          name.toString(),
-          brand.toString(),
-          serialNumber.toString(),
-          description.replace(/,/g, ';').toString(),
-          image.file.name,
-          manuName.toString(),
-          manuLocation.toString(),
-          manuDate.toString(),
-        )
-        console.log("hi")
-        // const registerTxn = await productContract.registerProduct(serialNumber,res.IpfsHash, expirationTimestamp);
-        console.log('Mining (Registering Product) ...', registerTxn.hash)
-        setLoading('Mining (Register Product) ...', registerTxn.hash)
-
-        // registerTxn= await registerTxn.wait();
-        await registerTxn.wait()
-        console.log('Mined (Register Product) --', registerTxn.hash)
-        setLoading(registerTxn.hash)
-
-        generateQRCode(serialNumber)
-
-        const product = await productContract.getProduct(serialNumber)
-
-        console.log('Retrieved product...', product)
-      } else {
-        console.log("Ethereum object doesn't exist!")
-      }
     } catch (error) {
-      console.log(error)
+        console.error(error);
+        return null;
     }
-  }
-  const getCurrentTimeLocation = () => {
-    setManuDate(dayjs().unix())
-    navigator.geolocation.getCurrentPosition(function (position) {
-      setManuLatitude(position.coords.latitude)
-      setManuLongtitude(position.coords.longitude)
-    })
-  }
+};
 
-  const addProductDB = async e => {
-    try {
-      const profileData = JSON.stringify({
-        serialNumber: serialNumber,
-        name: name,
-        brand: brand,
-      })
 
-      const res = await axios.post(
-        'http://localhost:5000/addproduct',
-        profileData,
-        {
-          headers: { 'Content-Type': 'application/json' },
-        },
-      )
+const AddProduct = () => {    
 
-      console.log(JSON.stringify(res.data))
-    } catch (err) {
-      console.log(err)
-    }
-  }
+    const [currentAccount, setCurrentAccount] = useState("");
+    const [serialNumber, setSerialNumber] = useState("");
+    const [name, setName] = useState("");
+    const [brand, setBrand] = useState("");
+    const [description, setDescription] = useState("");
+    //expiry
+    const [timeInDays,setTimeInDays] = useState("");
+    const [image, setImage] = useState({
+        file: [],
+        filepreview: null
+    });
+    const [qrData, setQrData] = useState('');
+    const [manuDate, setManuDate] = useState('');
+    const [manuLatitude, setManuLatitude] = useState("");
+    const [manuLongtitude, setManuLongtitude] = useState("");
+    const [manuName, setManuName] = useState("");
+    const [loading, setLoading] = useState("");
+    const [manuLocation, setManuLocation] = useState("");
+    const [isUnique, setIsUnique] = useState(true);
 
-  const checkUnique = async () => {
-    const res = await axios.get('http://localhost:5000/product/serialNumber')
+    const CONTRACT_ADDRESS  = '0x0C778A1762BEb8878947E56966E56EC8F476ebAc';
+    const contractABI = abi.abi;
 
-    const existingSerialNumbers = res.data.map(product => product.serialnumber)
-    // existingSerialNumbers.push(serialNumber);
+    const { auth } = useAuth();
+    const navigate = useNavigate();
+    
+    useEffect(() => {
+        findMetaMaskAccount().then((account) => {
+            if (account !== null) {
+                setCurrentAccount(account);
+            }
+        });
+        getUsername();
+        getCurrentTimeLocation();
+    }, []);
 
-    // checking for duplicated serial number
-    const duplicates = existingSerialNumbers.filter(
-      item => item === serialNumber,
-    )
-    console.log('duplicates: ', duplicates, duplicates.length)
-    // const isDuplicate = duplicates.length >= 1;
-    if (duplicates.length != 0) {
-      setIsUnique(false)
-    } else {
-      existingSerialNumbers.push(serialNumber)
-      setIsUnique(true)
-    } // setIsUnique(!isDuplicate);
-    console.log(existingSerialNumbers)
-    console.log('isUnique: ', isUnique)
-  }
+    useEffect(() => {
+        Geocode.setApiKey('AIzaSyB5MSbxR9Vuj1pPeGvexGvQ3wUel4znfYY')
 
-  const SendTx = async (e) => {
-    try {
-      const { ethereum } = window;
-  
-      if (ethereum) {
-        const provider = new ethers.providers.Web3Provider(ethereum);
-        const signer = provider.getSigner();
-        console.log('signer: ', signer);
-  
-        // Get the sender's address
-        const senderAddress = await signer.getAddress();
-        console.log('Sender Address:', senderAddress);
-  
-        // Convert amount to wei (smallest unit of Ether)
-        const amountInWei = ethers.utils.parseEther("0.0001");
-  
-        // Create a transaction object
-        const tx = {
-          to: '0x3F84f2d2CaF898c2C9F4355fB5495C8E430C264b',
-          value: amountInWei,
-        };
-  
-        // Send the transaction
-        console.log('Sending transaction...');
-        const txResponse = await signer.sendTransaction(tx);
-        console.log('Transaction Response:', txResponse);
-  
-        // Wait for the transaction to be mined
-        console.log('Waiting for transaction to be mined...');
-        const receipt = await txResponse.wait();
-        console.log('Transaction Mined:', receipt);
-      }
-    } catch (error) {
-      if (error.code === 4001) {
-        // EIP-1193 userRejectedRequest error
-        console.error('User rejected the transaction');
-        alert('You rejected the transaction. Please try again.');
-      } else {
-        console.error('Error sending transaction', error);
-        alert('An error occurred while sending the transaction. Please try again.');
-      }
-    }
-  };  
-  const handleSubmit = async e => {
-    e.preventDefault()
+        Geocode.fromLatLng(manuLatitude, manuLongtitude).then(
+            (response) => {
+              const address = response.results[0].formatted_address;
+              let city, state, country;
+              for (let i = 0; i < response.results[0].address_components.length; i++) {
+                for (let j = 0; j < response.results[0].address_components[i].types.length; j++) {
+                  switch (response.results[0].address_components[i].types[j]) {
+                    case "locality":
+                      city = response.results[0].address_components[i].long_name;
+                      break;
+                    case "administrative_area_level_1":
+                      state = response.results[0].address_components[i].long_name;
+                      break;
+                    case "country":
+                      country = response.results[0].address_components[i].long_name;
+                      break;
+                  }
+                }
+              }              
+              setManuLocation(address.replace(/,/g, ';'));
+              console.log("city, state, country: ", city, state, country);
+              console.log("address:", address);
+            },
+            (error) => {
+              console.error(error);
+            }
+          );
 
-    console.log('..............................')
-    console.log('name: ', name)
-    console.log('brand: ', brand)
-    console.log('description: ', description)
-    console.log('image: ', image.file.name)
-    console.log('serialNumber: ', serialNumber)
-    console.log('manufacture date: ', manuDate)
-    console.log('manufactured at: ', manuLocation)
-    console.log('manufactured by: ', manuName)
+    }, [manuLatitude, manuLongtitude]);
 
-    await checkUnique()
-    console.log('add product isUnique', isUnique)
-    if (isUnique) {
-      await uploadImage(image)
-      await addProductDB(e) // add product to database
-      setLoading(
-        'Please pay the transaction fee to update the product details...',
-      )
-      await registerProduct(e)
+    const generateQRCode = async (serialNumber) => {
+        // const qrCode = await productContract.getProduct(serialNumber);
+        const data = CONTRACT_ADDRESS + ',' + serialNumber
+        setQrData(data);
+        console.log("QR Code: ", qrData);
+
     }
 
-    // setIsUnique(true);
-  }
+    const downloadQR = () => {
+        const canvas = document.getElementById("QRCode");
+        const pngUrl = canvas
+          .toDataURL("image/png")
+          .replace("image/png", "image/octet-stream");
+        let downloadLink = document.createElement("a");
+        downloadLink.href = pngUrl;
+        downloadLink.download = `${serialNumber}.png`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      };
 
-  return (
-    <Box
-      sx={{
-        backgroundImage: `url(${bgImg})`,
-        minHeight: '80vh',
-        backgroundRepeat: 'no-repeat',
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        top: 0,
-        bottom: 0,
-        backgroundSize: 'cover',
-        backgroundRepeat: 'no-repeat',
-        zIndex: -2,
-        overflowY: 'scroll',
-      }}
-    >
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 20,
-          right: 20,
-        }}
-      >
-        {/* <WalletConnect /> */}
-      </Box>
-      <Paper
-        elevation={3}
-        sx={{
-          width: '400px',
-          margin: 'auto',
-          marginTop: '10%',
-          marginBottom: '10%',
-          padding: '3%',
-          backgroundColor: '#e3eefc',
-        }}
-      >
-        <Typography
-          variant="h2"
-          sx={{
-            textAlign: 'center',
-            marginBottom: '3%',
-            fontFamily: 'Gambetta',
-            fontWeight: 'bold',
-            fontSize: '2.5rem',
-          }}
-        >
-          Add Product
-        </Typography>
-        <form onSubmit={handleSubmit}>
-          <TextField
-            fullWidth
-            error={!isUnique}
-            helperText={!isUnique ? 'Serial Number already exists' : ''}
-            id="outlined-basic"
-            margin="normal"
-            label="Serial Number"
-            variant="outlined"
-            inherit="False"
-            onChange={e => setSerialNumber(e.target.value)}
-            value={serialNumber}
-          />
+    
+    const handleBack = () => {
+        navigate(-1)
+    }
 
-          <TextField
-            fullWidth
-            id="outlined-basic"
-            margin="normal"
-            label="Name"
-            variant="outlined"
-            inherit="False"
-            onChange={e => setName(e.target.value)}
-            value={name}
-          />
+    const handleImage = async (e) => {
+        setImage({
+            ...image,
+            file: e.target.files[0],
+            filepreview: URL.createObjectURL(e.target.files[0])
+        })
+    }
 
-          <TextField
-            fullWidth
-            id="outlined-basic"
-            margin="normal"
-            label="Brand"
-            variant="outlined"
-            inherit="False"
-            onChange={e => setBrand(e.target.value)}
-            value={brand}
-          />
+    const getUsername = async (e) => {
+        const res = await axios.get(`http://localhost:5000/profile/${auth.user}`)
+            .then(res => {
+                console.log(JSON.stringify(res?.data[0]));
+                setManuName(res?.data[0].name);
 
-          <TextField
-            fullWidth
-            id="outlined-basic"
-            margin="normal"
-            label="Description"
-            variant="outlined"
-            inherit="False"
-            multiline
-            minRows={2}
-            onChange={e => setDescription(e.target.value)}
-            value={description}
-          />
+            })
+    }
 
-          <Button
-            variant="outlined"
-            component="label"
-            fullWidth
-            sx={{ marginTop: '3%', marginBottom: '3%' }}
-          >
-            Upload Image
-            <input type="file" hidden onChange={handleImage} />
-          </Button>
 
-          {image.filepreview !== null ? (
-            <img
-              src={image.filepreview}
-              alt="preview"
-              style={{ width: '100%', height: '100%' }}
-            />
-          ) : null}
+    // to upload image
+    const uploadImage = async (image) => {
+        const data = new FormData();
+        data.append("image", image.file);
 
-          {qrData !== '' ? (
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginTop: '3%',
-              }}
-            >
-              <QRCode value={qrData} id="QRCode" />
-            </div>
-          ) : null}
+        axios.post("http://localhost:5000/upload/product", data, {
+            headers: { "Content-Type": "multipart/form-data" }
+        }).then(res => {
+            console.log(res);
 
-          {qrData !== '' ? (
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-                marginTop: '3%',
-              }}
-            >
-              <Button
-                variant="outlined"
-                component="label"
-                fullWidth
-                sx={{ marginTop: '3%', marginBottom: '3%' }}
-                onClick={downloadQR}
-              >
-                Download
-              </Button>
-            </div>
-          ) : null}
+            if (res.data.success === 1) {
+                console.log("image uploaded");
+            }
+        })
+    }
 
-          {isUnique ? (
-            loading !== '' && (
-              <Typography
-                variant="body2"
+    // const registerProduct = async (e) => {
+    //     e.preventDefault();
+
+    //     try {
+    //         const { ethereum } = window;
+
+    //         if (ethereum) {
+    //             const provider = new ethers.providers.Web3Provider(ethereum);
+    //             const signer = provider.getSigner();
+    //             const productContract = new ethers.Contract(CONTRACT_ADDRESS, contractABI, signer);
+
+    //             console.log("here")
+    //             //pinata
+    //             const pinata = new pinataSDK(process.env.PINATA_API_KEY,process.env.PINATA_SECRET_API_KEY)
+    //             try {
+                    
+    //                 const dataToPin = {
+    //                     name,
+    //                     brand,
+    //                     serialNumber,
+    //                     description,
+    //                     imageFileName: image.file.name,
+    //                     manuName,
+    //                     manuLocation,
+    //                     manuDate: manuDate.toString()
+    //                 }
+
+    //                 const dataString = JSON.stringify(dataToPin);
+                    
+    //                 const body ={
+    //                     message:"Product Details",
+    //                     data: dataString
+    //                 }
+                    
+    //                 const options = {
+    //                     pinataMetaData :{
+    //                         name:'ProductDetails',
+    //                         keyvalues:{
+    //                             serialNumber
+    //                         },
+    //                         pinataOptions:{
+    //                             cidVersion:0
+    //                         }
+    //                     }
+    //                 }
+
+    //                 pinata.pinJSONToIPFS(body,options).then(async (res)=>{
+    //                     console.log("pinata pin",res)
+
+    //                     //increasetimestamp for product expiry
+    //                     const expiryDurationDays = parseInt(timeInDays);
+    //                     const blockTimeStamp= (await provider.getBlock("latest")).timestamp;
+    //                     const expirationTimestamp = blockTimeStamp + (expiryDurationDays * 24 * 3600)
+                        
+    //                     // write transactions
+    //                     //  const registerTxn = await productContract.registerProduct(name, brand, serialNumber, description.replace(/,/g, ';'), image.file.name, manuName, manuLocation, manuDate.toString());
+    //                     const registerTxn = await productContract.registerProduct(serialNumber,res.IpfsHash, expirationTimestamp);
+    //                     if(!registerTxn){
+    //                      console.log("RegisterTx error ",registerTxn)
+    //                     }
+    //                     console.log("Mining (Registering Product) ...", registerTxn.hash);
+    //                     setLoading("Mining (Register Product) ...", registerTxn.hash);
+                        
+    //                     await registerTxn.wait();
+    //                     console.log("Mined (Register Product) --", registerTxn.hash);
+    //                     setLoading("Mined (Register Product) --", registerTxn.hash);
+                        
+    //                 }).catch((err)=>{
+    //                     console.error(err)
+    //                 })
+    //             } catch (error) {
+    //                 console.error("Unable to pin to IPFS")
+    //             }
+
+    //             generateQRCode(serialNumber);
+
+    //             const product = await productContract.getProduct(serialNumber);
+
+    //             console.log("Retrieved product...", product);
+    //             setLoading("");
+
+    //         } else {
+    //             console.log("Ethereum object doesn't exist!");
+    //         }
+    //     } catch (error) {
+    //         console.log(error);
+    //     }
+    // }
+    // const registerProduct = async (e) => {
+    //     e.preventDefault();
+
+    //     try {
+    //         const { ethereum } = window;
+
+    //         if (ethereum) {
+    //             const provider = new ethers.providers.Web3Provider(ethereum);
+    //             const signer = provider.getSigner();
+    //             const productContract = new ethers.Contract(CONTRACT_ADDRESS, contractABI, signer);
+
+    //             console.log("here")
+
+    //             // write transactions
+    //             let registerTxn = await productContract.registerProduct(name, brand, serialNumber, description.replace(/,/g, ';'), image.file.name, manuName, manuLocation, manuDate.toString());
+    //             // const registerTxn = await productContract.registerProduct(serialNumber,res.IpfsHash, expirationTimestamp);
+    //             console.log("Mining (Registering Product) ...", registerTxn.hash);
+    //             setLoading("Mining (Register Product) ...", registerTxn.hash);
+                
+    //             // registerTxn= await registerTxn.wait();
+    //             await registerTxn.wait();
+    //             console.log("Mined (Register Product) --", registerTxn.hash);
+    //             setLoading(registerTxn.hash);
+
+    //             generateQRCode(serialNumber);
+
+    //             const product = await productContract.getProduct(serialNumber);
+
+    //             console.log("Retrieved product...", product);
+    //             setLoading("");
+
+    //         } else {
+    //             console.log("Ethereum object doesn't exist!");
+    //         }
+    //     } catch (error) {
+    //         console.log(error);
+    //     }
+    // }
+    const registerProduct = async (e) => {
+        e.preventDefault();
+    
+        try {
+            const { ethereum } = window;
+    
+            if (ethereum) {
+                const provider = new ethers.providers.Web3Provider(ethereum);
+                const signer = provider.getSigner();
+                const productContract = new ethers.Contract(CONTRACT_ADDRESS, contractABI, signer);
+    
+                console.log("Initiating transaction...");
+    
+                // Write transactions
+                const registerTxn = await productContract.registerProduct(name, brand, serialNumber, description.replace(/,/g, ';'), image.file.name, manuName, manuLocation, manuDate.toString());
+                console.log("Mining (Registering Product) ...", registerTxn.hash);
+                setLoading("Mining (Register Product) ...");
+    
+                // Wait for the transaction to be mined
+                const receipt = await registerTxn.wait();
+                console.log("Mined (Register Product) --", receipt.transactionHash);
+                setLoading(receipt.transactionHash);
+    
+                // Generate QR code for the serial number
+                generateQRCode(serialNumber);
+    
+                // Retrieve product data from the contract
+                const product = await productContract.getProduct(serialNumber);
+                console.log("Retrieved product...", product);
+    
+            } else {
+                console.error("Ethereum object doesn't exist!");
+            }
+        } catch (error) {
+            console.error("Error registering product:", error);
+        }
+    }
+    
+    const getCurrentTimeLocation = () => {
+        setManuDate(dayjs().unix())
+        navigator.geolocation.getCurrentPosition(function(position) {
+            setManuLatitude(position.coords.latitude);
+            setManuLongtitude(position.coords.longitude);
+          });
+    }   
+
+    const addProductDB = async (e) => {
+        try {
+            const profileData = JSON.stringify({
+                "serialNumber": serialNumber,
+                "name": name,
+                "brand": brand,
+              });
+
+            const res = await axios.post('http://localhost:5000/addproduct', profileData,
+                {
+                    headers: {'Content-Type': 'application/json'},
+                });
+            
+            console.log(JSON.stringify(res.data));
+            
+
+
+        } catch (err) {
+            console.log(err);
+        }
+    }
+
+    const checkUnique = async () => {
+        const res = await axios.get("http://localhost:5000/product/serialNumber");
+
+        const existingSerialNumbers = res.data.map((product) => product.serialnumber);
+        // existingSerialNumbers.push(serialNumber);
+         
+        // checking for duplicated serial number
+        const duplicates = existingSerialNumbers.filter((item) => item === serialNumber)
+        console.log("duplicates: ", duplicates, duplicates.length)
+        // const isDuplicate = duplicates.length >= 1;
+      if(duplicates.length != 0){
+        setIsUnique(false)
+    }else {
+        existingSerialNumbers.push(serialNumber);
+          setIsUnique(true);
+ }       // setIsUnique(!isDuplicate);   
+        console.log(existingSerialNumbers)
+        console.log("isUnique: ", isUnique)
+    }
+
+
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+          
+        console.log("..............................");
+        console.log("name: ", name);
+        console.log("brand: ", brand);
+        console.log("description: ", description);
+        console.log("image: ", image.file.name);
+        console.log("serialNumber: ", serialNumber);
+        console.log("manufacture date: ", manuDate);
+        console.log("manufactured at: ", manuLocation);
+        console.log("manufactured by: ", manuName);
+
+        await checkUnique();
+   console.log("add product isUnique",isUnique)
+        if(isUnique){
+            uploadImage(image);
+            addProductDB(e); // add product to database
+            setLoading("Please pay the transaction fee to update the product details...")
+            await registerProduct(e);
+        }   
+       
+        // setIsUnique(true);
+    }
+
+    return (
+        <Box sx={{
+            backgroundImage: `url(${heroBg})`,
+            minHeight: "80vh",
+            backgroundRepeat: "no-repeat",
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            top: 0,
+            bottom: 0,
+            backgroundSize: 'cover',
+            backgroundRepeat: 'no-repeat',
+            zIndex: -2,
+            overflowY: "scroll"
+        }}>
+             <Box
                 sx={{
-                  textAlign: 'center',
-                  marginTop: '3%',
+                    position: 'absolute',
+                    top: 20,
+                    right: 20,
                 }}
-              >
-                {loading.length === 66 ? (
-                  <Link
-                    href={`${explorerBaseUrl}${loading}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    See the Transaction on Block Explorer
-                  </Link>
-                ) : (
-                  loading
-                )}
-              </Typography>
-            )
-          ) : (
-            <p style={{ textAlign: 'center', color: 'red' }}>
-              Product already exists
-            </p>
-          )}
-
-          <Button
-            variant="contained"
-            type="submit"
-            sx={{
-              width: '100%',
-              marginTop: '3%',
-              backgroundColor: '#98b5d5',
-              '&:hover': { backgroundColor: '#618dbd' },
-            }}
-            onClick={handleSubmit}
-          >
-            Add Product
-          </Button>
-
-          <Box
-            sx={{
-              width: '100%',
-              display: 'flex',
-              justifyContent: 'center',
-            }}
-          >
-            <Button
-              onClick={handleBack}
-              sx={{
-                marginTop: '5%',
-              }}
             >
-              Back
-            </Button>
+                <WalletConnect />
+            </Box>
+            <Paper elevation={3} sx={{ width: "400px", margin: "auto", marginTop: "10%", marginBottom: "10%", padding: "3%", backgroundColor: "#e3eefc" }}>
+                <Typography
+                    variant="h2"
+                    sx={{
+                        textAlign: "center", marginBottom: "3%",
+                        fontFamily: 'Gambetta', fontWeight: "bold", fontSize: "2.5rem"
+                    }}
+                >
+                    Add Product</Typography>
+                <form onSubmit={handleSubmit}>
+                    <TextField
+                        fullWidth
+                        error={!isUnique}
+                        helperText={!isUnique ? "Serial Number already exists" : ""}
+                        id="outlined-basic"
+                        margin="normal"
+                        label="Serial Number"
+                        variant="outlined"
+                        inherit="False"
+                        onChange={(e) => setSerialNumber(e.target.value)}
+                        value={serialNumber}
+                    />
+                    
+                    <TextField
+                        fullWidth
+                        id="outlined-basic"
+                        margin="normal"
+                        label="Name"
+                        variant="outlined"
+                        inherit="False"
+                        onChange={(e) => setName(e.target.value)}
+                        value={name}
+                    />
 
-            <Button
-              onClick={SendTx}
-              sx={{
-                marginTop: '5%',
-              }}
-            >
-              Send Tx
-            </Button>
-          </Box>
-        </form>
-      </Paper>
-    </Box>
-  )
+                    <TextField
+                        fullWidth
+                        id="outlined-basic"
+                        margin="normal"
+                        label="Brand"
+                        variant="outlined"
+                        inherit="False"
+                        onChange={(e) => setBrand(e.target.value)}
+                        value={brand}
+                    />
+
+                    <TextField
+                        fullWidth
+                        id="outlined-basic"
+                        margin="normal"
+                        label="Description"
+                        variant="outlined"
+                        inherit="False"
+                        multiline
+                        minRows={2}
+                        onChange={(e) => setDescription(e.target.value)}
+                        value={description}
+                    />                        
+
+
+                    <Button
+                        variant="outlined"
+                        component="label"
+                        fullWidth
+                        sx={{ marginTop: "3%", marginBottom: "3%" }}
+                    >
+                        Upload Image
+                        <input
+                            type="file"
+                            hidden
+                            onChange={handleImage}
+                        />
+                    </Button>
+
+                    {image.filepreview !== null ?
+                        <img src={image.filepreview} alt="preview" style={{ width: "100%", height: "100%" }} />
+                        : null}
+
+                    {qrData !== "" ? <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '3%' }}>
+                        <QRCode 
+                            value={qrData}
+                            id="QRCode" />
+                
+                    </div> : null}
+
+                    {qrData !== "" ? <div style={{ display: 'flex',  justifyContent: 'center', alignItems: 'center', marginTop: '3%' }}>
+                        <Button
+                            variant="outlined"
+                            component="label"
+                            fullWidth
+                            sx={{ marginTop: "3%", marginBottom: "3%" }}                            
+                            onClick={downloadQR}
+                        >
+                            Download
+                        </Button>
+      
+                    </div> : null}
+                
+
+                    {
+                        isUnique ? (
+                            loading !== "" && (
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        textAlign: "center", marginTop: "3%"
+                                    }}
+                                >
+                                    {
+                                        loading.length === 66 ? (
+                                            <Link href={`${explorerBaseUrl}${loading}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                            >
+                                                See the Transaction on Block Explorer
+                                            </Link>
+                                        ) : loading
+                                    }
+                                </Typography>
+                            )
+                        ) : (
+                            <p style={{ textAlign: 'center', color: 'red' }}>Product already exists</p>
+
+                        )
+                    }
+
+
+                    <Button
+                        variant="contained"
+                        type="submit"
+                        sx={{ width: "100%", marginTop: "3%", backgroundColor: '#98b5d5', '&:hover': { backgroundColor: '#618dbd' } }}
+                        onClick={getCurrentTimeLocation}
+                    >
+                        Add Product
+                    </Button>
+
+                    <Box
+                        sx={{
+                            width: "100%",
+                            display: "flex",
+                            justifyContent: "center",
+                        }}
+                    >
+
+
+                        <Button
+                            onClick={handleBack}
+                            sx={{
+                                marginTop: "5%",
+                            }}
+                        >
+                            Back
+                        </Button>
+
+                    </Box>                    
+
+                </form>
+
+            </Paper>
+          
+
+        </Box>
+    );
 }
 
-export default AddProduct
+export default AddProduct;

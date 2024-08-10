@@ -1,5 +1,5 @@
 import { Box, Paper, Typography, Autocomplete } from '@mui/material';
-import bgImg from '../../img/bg.png';
+import heroBg from "../../img/herobg.png";
 import { TextField, Button } from '@mui/material';
 import { useEffect, useState } from 'react';
 import useAuth from '../../hooks/useAuth';
@@ -201,7 +201,7 @@ const UpdateProductDetails = () => {
 
     return (
         <Box sx={{
-            backgroundImage: `url(${bgImg})`,
+            backgroundImage: `url(${heroBg})`,
             minHeight: "80vh",
             backgroundRepeat: "no-repeat",
             position: 'absolute',

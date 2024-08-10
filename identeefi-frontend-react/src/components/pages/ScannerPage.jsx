@@ -1,5 +1,5 @@
 import { Box, Paper, Avatar, Typography, Button } from '@mui/material';
-import bgImg from '../../img/bg.png';
+import heroBg from "../../img/herobg.png";
 import QrScanner from '../QrScanner';
 import { useEffect, useState } from 'react';
 import useAuth from '../../hooks/useAuth';
@@ -64,7 +64,7 @@ const CONTRACT_ADDRESS= '0x0C778A1762BEb8878947E56966E56EC8F476ebAc'
     return (
 
         <Box sx={{
-            backgroundImage: `url(${bgImg})`,
+            backgroundImage: `url(${heroBg})`,
             minHeight: "80vh",
             backgroundRepeat: "no-repeat",
             position: 'absolute',
