@@ -1,11 +1,12 @@
 import '../../css/Role.css'
 import { Button } from '../Button'
-import { Link } from 'react-router-dom'
+import { Link,useNavigate } from 'react-router-dom'
 import { Box, Button as Btn } from '@mui/material'
 import LogoutIcon from '@mui/icons-material/Logout'
 import { useState, useEffect } from 'react'
 import WalletConnect from './WalletConnect'
-
+import { useAccount } from 'wagmi';
+import { config } from './WalletConnect'
 const getEthereumObject = () => window.ethereum
 
 const findMetaMaskAccount = async () => {
@@ -39,6 +40,57 @@ const findMetaMaskAccount = async () => {
 
 const Retailer = () => {
   const [currentAccount, setCurrentAccount] = useState('')
+  const { isConnected, address ,isConnecting} = useAccount({config});
+
+  const [connected,setConnected] =  useState(false);
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const storedStatus = sessionStorage.getItem('walletConnected');
+    setConnected(storedStatus === 'true');
+  }, []);
+
+  useEffect(() => {
+    sessionStorage.setItem('walletConnected', connected.toString());
+  }, [connected]);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      sessionStorage.clear();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
+  const handleProfileClick = () => {
+    if (connected) {
+      console.log("isConnected",isConnected);
+      navigate('/profile');
+    }else{
+      alert("Pls connect to your wallet first")
+    }
+  };
+
+  const handleUpdateProduct = () => {
+    if (connected) {
+      console.log("isConnected",isConnected);
+      navigate('/scanner');
+    }else{
+      alert("Pls connect to your wallet first")
+    }
+  };
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('walletConnected');
+    setConnected(false);
+    setCurrentAccount('');
+    navigate('/login');
+  };
+
 
   useEffect(() => {
     findMetaMaskAccount().then(account => {
@@ -62,6 +114,7 @@ const Retailer = () => {
 
       console.log('Connected', accounts[0])
       setCurrentAccount(accounts[0])
+      setConnected(true)
     } catch (error) {
       console.error(error)
     }
@@ -77,35 +130,38 @@ const Retailer = () => {
             right: 20,
           }}
         >
-          <Btn href="/login" endIcon={<LogoutIcon />}>
+          <Btn onClick={handleLogout} href="/login" endIcon={<LogoutIcon />}>
             Logout
           </Btn>
         </Box>
 
         <h2>Welcome:</h2>
         <h1>Retailer</h1>
-
-        <Link to="/profile">
+<div>
           <Button
             className="btns"
             buttonStyle="btn--long"
             buttonSize="btn--large"
+            disabled={!connected}
+            onClick={handleProfileClick}
           >
             Check Profile
           </Button>
-        </Link>
+        </div>
 
-        <Link to="/scanner">
+        <div>
           <Button
             className="btns"
             buttonStyle="btn--long"
             buttonSize="btn--large"
+            disabled={!connected}
+            onClick={handleUpdateProduct}
           >
             Update Product
           </Button>
-        </Link>
+        </div>
 
-        <WalletConnect />
+        <WalletConnect onClick={connectWallet} />
         {/* {!currentAccount && (
                     <Button className="btns" buttonStyle='btn--long' buttonSize='btn--large' onClick={connectWallet}>Connect Wallet</Button>
                 )} */}

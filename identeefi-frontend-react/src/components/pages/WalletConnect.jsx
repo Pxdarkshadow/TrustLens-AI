@@ -36,8 +36,8 @@ const vanarChain = {
   },
 }
 
-const chains = [mainnet, arbitrum,polygon,sepolia,vanarChain,bscTestnet]
-const config = defaultWagmiConfig({
+export const chains = [mainnet, arbitrum,polygon,sepolia,vanarChain,bscTestnet]
+export const config = defaultWagmiConfig({
   chains,
   projectId,
   metadata,

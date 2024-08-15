@@ -108,7 +108,7 @@ export default function Login() {
                             fontFamily: 'Gambetta', fontWeight: "bold", fontSize: "2.5rem",
                         }}
                     >
-                        IDENTEEFI
+                        AUTHENTISCAN
                     </Typography>
                     <Typography component="h1" variant="h5" color="#fff">
                         Login

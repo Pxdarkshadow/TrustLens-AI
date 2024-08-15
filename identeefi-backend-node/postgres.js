@@ -153,12 +153,14 @@ app.get('/profileAll', async (req, res)=>{
 app.get('/profile/:username', async (req, res)=>{
     const {username} = req.params;
     const data =  await client.query(`SELECT * FROM profile WHERE username = '${username}'`);
+    console.log("data",data)
     res.send(data.rows);
     console.log("Data sent successfully4");
 });
 
 app.post('/addprofile', (req, res)=>{
     const {username, name, description, website, location, image, role} = req.body;
+    console.log("image",image);
     createProfile(username, name, description, website, location, image, role);
     res.send('Data inserted');
 
@@ -201,12 +203,15 @@ app.post('/upload/product', (req, res)=>{
 app.get('/file/profile/:fileName', function (req, res) {
     const {fileName} = req.params;
     const filePath = path.join(__dirname, 'public/uploads/profile', fileName);
+    console.log('Serving file from:', filePath);
     res.sendFile(filePath);
 });
 
 app.get('/file/product/:fileName', function (req, res) {
     const {fileName} = req.params;
     const filePath = path.join(__dirname, 'public/uploads/product', fileName);
+    console.log('Serving file from:', filePath);
+
     res.sendFile(filePath);
 });
 

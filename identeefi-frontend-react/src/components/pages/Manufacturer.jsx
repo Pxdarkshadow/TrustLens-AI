@@ -1,15 +1,15 @@
 import '../../css/Role.css';
 import { Button } from '../Button';
 import { createWeb3Modal, useWeb3Modal } from '@web3modal/wagmi/react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Box, Button as MuiButton } from '@mui/material';
 import LogoutIcon from '@mui/icons-material/Logout';
 import WalletConnect from './WalletConnect';
 import { arbitrum, mainnet, polygon, sepolia, bscTestnet } from 'wagmi/chains';
 import { defaultWagmiConfig } from '@web3modal/wagmi/react/config';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAccount } from 'wagmi';
-
+// import { useDisconnect } from 'wagmi';
 const projectId = '7236c984a38479e85f91b945bd9076a8';
 if (!projectId) {
   throw new Error("Please provide project id");
@@ -81,15 +81,56 @@ const findMetaMaskAccount = async () => {
   }
 };
 
+
 const Manufacturer = () => {
   const [currentAccount, setCurrentAccount] = useState('');
-  const { isConnected, address } = useAccount({ config });
+  // const {disconnect} = useDisconnect();
+  const { open } = useWeb3Modal();
+  const { isConnected, address ,isConnecting} = useAccount({ config });
   const navigate = useNavigate();
+  
+  const [connected,setConnected] =  useState(false);
+  useEffect(() => {
+    const storedStatus = sessionStorage.getItem('walletConnected');
+    setConnected(storedStatus === 'true');
+  }, []);
 
   useEffect(() => {
-    console.log('isConnected:', isConnected);
-  }, [isConnected]);
+    sessionStorage.setItem('walletConnected', connected.toString());
+  }, [connected]);
 
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      sessionStorage.clear();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, []);
+
+  const handleLogout = () => {
+    sessionStorage.removeItem('walletConnected');
+    setConnected(false);
+    setCurrentAccount('');
+    navigate('/login');
+  };
+
+  
+  useEffect(() => {
+    console.log('isConnected:', isConnected,isConnecting);
+    // console.log("open",open);
+  }, [isConnected,isConnecting]);
+    useEffect(() => {
+    console.log('open function:', open); // Log the open function
+  }, [open]);
+
+  // const handleDisconnect = () => {
+  //   disconnect();
+  //   setCurrentAccount(''); // Clear the current account state
+  // };
   useEffect(() => {
     findMetaMaskAccount().then((account) => {
       if (account !== null) {
@@ -101,27 +142,43 @@ const Manufacturer = () => {
   const connectWallet = async () => {
     try {
       const ethereum = getEthereumObject();
+     await open();
       if (!ethereum) {
         alert("Get MetaMask!");
         return;
       }
-
       const accounts = await ethereum.request({
         method: "eth_requestAccounts",
       });
 
       console.log("Connected", accounts[0]);
       setCurrentAccount(accounts[0]);
+      setConnected(true);
+      console.log("isConnected",isConnected,isConnecting)
     } catch (error) {
       console.error(error);
     }
   };
 
   const handleProfileClick = () => {
-    if (isConnected) {
+    console.log("open",open,isConnected);
+    if (connected) {
+      console.log("isConnected",isConnected);
       navigate('/profile');
+    }else{
+      alert("Pls connect to your wallet first")
     }
   };
+
+  const handleAddProductClick = () => {
+    if (connected) {
+      console.log("isConnected",isConnected);
+      navigate('/add-product');
+    }else{
+      alert("Pls connect to your wallet first")
+    }
+  };
+
 
   useEffect(() => {
     console.log("Current account:", currentAccount);
@@ -145,16 +202,20 @@ const Manufacturer = () => {
             right: 20,
           }}
         >
-          <MuiButton href="/login" endIcon={<LogoutIcon />}>Logout</MuiButton>
+          <MuiButton onClick={handleLogout} href="/login" endIcon={<LogoutIcon />}>Logout</MuiButton>
         </Box>
         <h2>Welcome:</h2>
         <h1>Manufacturer</h1>
-        <Link to="/profile">
-          <Button className="btns" buttonStyle='btn--long' buttonSize='btn--large' onClick={handleProfileClick}>Check Profile</Button>
-        </Link>
-        <Link to="/add-product">
-          <Button className="btns" buttonStyle='btn--long' buttonSize='btn--large'>Add Product</Button>
-        </Link>
+        {/* <Link to={isConnected ? "/profile": "#"}> */}
+        <div>
+
+          <Button className="btns" buttonStyle='btn--long' buttonSize='btn--large'disabled={!connected} onClick={handleProfileClick}
+          >Check Profile</Button>
+          </div>
+        {/* </Link> */}
+        <div>
+          <Button className="btns" buttonStyle='btn--long' buttonSize='btn--large' disabled={!connected} onClick={handleAddProductClick}>Add Product</Button>
+        </div>
         <WalletConnect onClick={connectWallet} />
 
       </div>

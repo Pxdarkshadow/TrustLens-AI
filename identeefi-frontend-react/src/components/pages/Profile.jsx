@@ -22,17 +22,25 @@ const Profile = () => {
     const handleBack = () => {
         navigate(-1)
     }
-
+    const getImage = async (imageName) => {
+      setImage(prevState => ({
+          ...prevState,
+          filepreview: `http://localhost:5000/file/profile/${imageName}`
+          })
+      )
+  }
     const handleData = async (e) => {
+      console.log('auth',auth.user);
         const res = await axios.get(`http://localhost:5000/profile/${auth.user}`)
             .then(res => {
                 console.log(JSON.stringify(res?.data[0]));
+    
                 setName(res?.data[0].name);
                 setDescription(res?.data[0].description);
                 setRole(res.data[0].role);
                 setWebsite(res?.data[0].website);
                 setLocation(res?.data[0].location);
-                // setImage(res.data.image);
+                getImage(res?.data[0].image);
             })
     }
 
@@ -77,6 +85,9 @@ const Profile = () => {
             }}
           >
             <Avatar
+              alt={name}
+              src={image.filepreview}
+            
               sx={{
                 width: 100,
                 height: 100,

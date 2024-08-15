@@ -1,6 +1,6 @@
 import { Box, Paper, Typography } from '@mui/material';
 import heroBg from "../../img/herobg.png";
-import { TextField, Button, Link  } from '@mui/material';
+import { TextField, Button, Link } from '@mui/material';
 import { useEffect, useState } from 'react';
 import { ethers } from "ethers";
 import axios from 'axios';
@@ -11,8 +11,9 @@ import useAuth from '../../hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import Geocode from "react-geocode";
 import { color } from '@mui/system';
-import { red } from '@mui/material/colors';
 import WalletConnect from './WalletConnect';
+// import {pinataSDK} from '@pinata/sdk';
+
 // import pinataSDK  from "@pinata/sdk";
 
 const getEthereumObject = () => window.ethereum;
@@ -52,7 +53,7 @@ const findMetaMaskAccount = async () => {
 };
 
 
-const AddProduct = () => {    
+const AddProduct = () => {
 
     const [currentAccount, setCurrentAccount] = useState("");
     const [serialNumber, setSerialNumber] = useState("");
@@ -60,7 +61,7 @@ const AddProduct = () => {
     const [brand, setBrand] = useState("");
     const [description, setDescription] = useState("");
     //expiry
-    const [timeInDays,setTimeInDays] = useState("");
+    const [timeInDays, setTimeInDays] = useState("");
     const [image, setImage] = useState({
         file: [],
         filepreview: null
@@ -73,13 +74,17 @@ const AddProduct = () => {
     const [loading, setLoading] = useState("");
     const [manuLocation, setManuLocation] = useState("");
     const [isUnique, setIsUnique] = useState(true);
+    const [fileImg, setFileImg] = useState(null);
 
-    const CONTRACT_ADDRESS  = '0x0C778A1762BEb8878947E56966E56EC8F476ebAc';
+    const [metadataUrl, setMetadataUrl] = useState('');
+
+
+    const CONTRACT_ADDRESS = '0x0C778A1762BEb8878947E56966E56EC8F476ebAc';
     const contractABI = abi.abi;
 
     const { auth } = useAuth();
     const navigate = useNavigate();
-    
+
     useEffect(() => {
         findMetaMaskAccount().then((account) => {
             if (account !== null) {
@@ -95,36 +100,35 @@ const AddProduct = () => {
 
         Geocode.fromLatLng(manuLatitude, manuLongtitude).then(
             (response) => {
-              const address = response.results[0].formatted_address;
-              let city, state, country;
-              for (let i = 0; i < response.results[0].address_components.length; i++) {
-                for (let j = 0; j < response.results[0].address_components[i].types.length; j++) {
-                  switch (response.results[0].address_components[i].types[j]) {
-                    case "locality":
-                      city = response.results[0].address_components[i].long_name;
-                      break;
-                    case "administrative_area_level_1":
-                      state = response.results[0].address_components[i].long_name;
-                      break;
-                    case "country":
-                      country = response.results[0].address_components[i].long_name;
-                      break;
-                  }
+                const address = response.results[0].formatted_address;
+                let city, state, country;
+                for (let i = 0; i < response.results[0].address_components.length; i++) {
+                    for (let j = 0; j < response.results[0].address_components[i].types.length; j++) {
+                        switch (response.results[0].address_components[i].types[j]) {
+                            case "locality":
+                                city = response.results[0].address_components[i].long_name;
+                                break;
+                            case "administrative_area_level_1":
+                                state = response.results[0].address_components[i].long_name;
+                                break;
+                            case "country":
+                                country = response.results[0].address_components[i].long_name;
+                                break;
+                        }
+                    }
                 }
-              }              
-              setManuLocation(address.replace(/,/g, ';'));
-              console.log("city, state, country: ", city, state, country);
-              console.log("address:", address);
+                setManuLocation(address.replace(/,/g, ';'));
+                console.log("city, state, country: ", city, state, country);
+                console.log("address:", address);
             },
             (error) => {
-              console.error(error);
+                console.error(error);
             }
-          );
+        );
 
     }, [manuLatitude, manuLongtitude]);
 
     const generateQRCode = async (serialNumber) => {
-        // const qrCode = await productContract.getProduct(serialNumber);
         const data = CONTRACT_ADDRESS + ',' + serialNumber
         setQrData(data);
         console.log("QR Code: ", qrData);
@@ -134,17 +138,17 @@ const AddProduct = () => {
     const downloadQR = () => {
         const canvas = document.getElementById("QRCode");
         const pngUrl = canvas
-          .toDataURL("image/png")
-          .replace("image/png", "image/octet-stream");
+            .toDataURL("image/png")
+            .replace("image/png", "image/octet-stream");
         let downloadLink = document.createElement("a");
         downloadLink.href = pngUrl;
         downloadLink.download = `${serialNumber}.png`;
         document.body.appendChild(downloadLink);
         downloadLink.click();
         document.body.removeChild(downloadLink);
-      };
+    };
 
-    
+
     const handleBack = () => {
         navigate(-1)
     }
@@ -167,7 +171,6 @@ const AddProduct = () => {
     }
 
 
-    // to upload image
     const uploadImage = async (image) => {
         const data = new FormData();
         data.append("image", image.file);
@@ -183,162 +186,108 @@ const AddProduct = () => {
         })
     }
 
-    // const registerProduct = async (e) => {
-    //     e.preventDefault();
 
-    //     try {
-    //         const { ethereum } = window;
+    const uploadImageToIPFS = async (imageFile) => {
+        const formData = new FormData();
+        formData.append('file', imageFile);
 
-    //         if (ethereum) {
-    //             const provider = new ethers.providers.Web3Provider(ethereum);
-    //             const signer = provider.getSigner();
-    //             const productContract = new ethers.Contract(CONTRACT_ADDRESS, contractABI, signer);
+        try {
+            const resFile = await axios.post('https://api.pinata.cloud/pinning/pinFileToIPFS', formData, {
+                maxRedirects: 0,
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    pinata_api_key: 'fa2b19b73212285f0b63',
+                    pinata_secret_api_key: '3eb7e681c6a2bf3ce1f032102cae6842a0a77dccde1afdc198dc375b3993e393'
+                }
+            });
+            return `https://aquamarine-accessible-takin-121.mypinata.cloud/ipfs/${resFile.data.IpfsHash}`;
+        } catch (error) {
+            console.error("Error uploading image to IPFS:", error);
+            throw error;
+        }
+    }
 
-    //             console.log("here")
-    //             //pinata
-    //             const pinata = new pinataSDK(process.env.PINATA_API_KEY,process.env.PINATA_SECRET_API_KEY)
-    //             try {
-                    
-    //                 const dataToPin = {
-    //                     name,
-    //                     brand,
-    //                     serialNumber,
-    //                     description,
-    //                     imageFileName: image.file.name,
-    //                     manuName,
-    //                     manuLocation,
-    //                     manuDate: manuDate.toString()
-    //                 }
+    const uploadMetadataToIPFS = async (metadata) => {
+        console.log('starting');
 
-    //                 const dataString = JSON.stringify(dataToPin);
-                    
-    //                 const body ={
-    //                     message:"Product Details",
-    //                     data: dataString
-    //                 }
-                    
-    //                 const options = {
-    //                     pinataMetaData :{
-    //                         name:'ProductDetails',
-    //                         keyvalues:{
-    //                             serialNumber
-    //                         },
-    //                         pinataOptions:{
-    //                             cidVersion:0
-    //                         }
-    //                     }
-    //                 }
+        const jsonBlob = new Blob([JSON.stringify(metadata)], { type: 'application/json' });
 
-    //                 pinata.pinJSONToIPFS(body,options).then(async (res)=>{
-    //                     console.log("pinata pin",res)
+        const formData = new FormData();
+        formData.append('file', jsonBlob, 'metadata.json');
 
-    //                     //increasetimestamp for product expiry
-    //                     const expiryDurationDays = parseInt(timeInDays);
-    //                     const blockTimeStamp= (await provider.getBlock("latest")).timestamp;
-    //                     const expirationTimestamp = blockTimeStamp + (expiryDurationDays * 24 * 3600)
-                        
-    //                     // write transactions
-    //                     //  const registerTxn = await productContract.registerProduct(name, brand, serialNumber, description.replace(/,/g, ';'), image.file.name, manuName, manuLocation, manuDate.toString());
-    //                     const registerTxn = await productContract.registerProduct(serialNumber,res.IpfsHash, expirationTimestamp);
-    //                     if(!registerTxn){
-    //                      console.log("RegisterTx error ",registerTxn)
-    //                     }
-    //                     console.log("Mining (Registering Product) ...", registerTxn.hash);
-    //                     setLoading("Mining (Register Product) ...", registerTxn.hash);
-                        
-    //                     await registerTxn.wait();
-    //                     console.log("Mined (Register Product) --", registerTxn.hash);
-    //                     setLoading("Mined (Register Product) --", registerTxn.hash);
-                        
-    //                 }).catch((err)=>{
-    //                     console.error(err)
-    //                 })
-    //             } catch (error) {
-    //                 console.error("Unable to pin to IPFS")
-    //             }
+        const API_KEY = 'fa2b19b73212285f0b63';
+        const API_SECRET = '3eb7e681c6a2bf3ce1f032102cae6842a0a77dccde1afdc198dc375b3993e393';
 
-    //             generateQRCode(serialNumber);
+        const url = `https://api.pinata.cloud/pinning/pinFileToIPFS`;
 
-    //             const product = await productContract.getProduct(serialNumber);
+        try {
+            const response = await axios.post(url, formData, {
+                maxContentLength: "Infinity",
+                headers: {
+                    "Content-Type": `multipart/form-data; boundary=${formData._boundary}`,
+                    'pinata_api_key': API_KEY,
+                    'pinata_secret_api_key': API_SECRET
+                }
+            });
 
-    //             console.log("Retrieved product...", product);
-    //             setLoading("");
+            console.log(response);
+            //   setIPFSHASH(response.data.IpfsHash);
+            console.log("ipfs: ", response.data.IpfsHash);
+            return `https://aquamarine-accessible-takin-121.mypinata.cloud/ipfs/${response.data.IpfsHash}`;
 
-    //         } else {
-    //             console.log("Ethereum object doesn't exist!");
-    //         }
-    //     } catch (error) {
-    //         console.log(error);
-    //     }
-    // }
-    // const registerProduct = async (e) => {
-    //     e.preventDefault();
+        } catch (error) {
+            console.error('Error uploading to IPFS', error);
+        }
+    }
 
-    //     try {
-    //         const { ethereum } = window;
 
-    //         if (ethereum) {
-    //             const provider = new ethers.providers.Web3Provider(ethereum);
-    //             const signer = provider.getSigner();
-    //             const productContract = new ethers.Contract(CONTRACT_ADDRESS, contractABI, signer);
-
-    //             console.log("here")
-
-    //             // write transactions
-    //             let registerTxn = await productContract.registerProduct(name, brand, serialNumber, description.replace(/,/g, ';'), image.file.name, manuName, manuLocation, manuDate.toString());
-    //             // const registerTxn = await productContract.registerProduct(serialNumber,res.IpfsHash, expirationTimestamp);
-    //             console.log("Mining (Registering Product) ...", registerTxn.hash);
-    //             setLoading("Mining (Register Product) ...", registerTxn.hash);
-                
-    //             // registerTxn= await registerTxn.wait();
-    //             await registerTxn.wait();
-    //             console.log("Mined (Register Product) --", registerTxn.hash);
-    //             setLoading(registerTxn.hash);
-
-    //             generateQRCode(serialNumber);
-
-    //             const product = await productContract.getProduct(serialNumber);
-
-    //             console.log("Retrieved product...", product);
-    //             setLoading("");
-
-    //         } else {
-    //             console.log("Ethereum object doesn't exist!");
-    //         }
-    //     } catch (error) {
-    //         console.log(error);
-    //     }
-    // }
     const registerProduct = async (e) => {
         e.preventDefault();
-    
+
         try {
             const { ethereum } = window;
-    
+
             if (ethereum) {
+                setLoading("Mining Block...");
+                const imageUrl = await uploadImageToIPFS(image.file);
+                console.log("imageUrl", imageUrl)
+                // Prepare metadata
+                const metadata = {
+                    name,
+                    brand,
+                    serialNumber,
+                    description,
+                    image: imageUrl,
+                    manuName,
+                    manuLocation,
+                    manuDate: manuDate.toString()
+                };
+
+                // setLoading("Uploading metadata to IPFS...");
+                const metadataUrl = await uploadMetadataToIPFS(metadata);
+                setMetadataUrl(metadataUrl);
+
+                console.log("metadataUrl", metadataUrl);
+
                 const provider = new ethers.providers.Web3Provider(ethereum);
                 const signer = provider.getSigner();
                 const productContract = new ethers.Contract(CONTRACT_ADDRESS, contractABI, signer);
-    
+
                 console.log("Initiating transaction...");
-    
-                // Write transactions
+
                 const registerTxn = await productContract.registerProduct(name, brand, serialNumber, description.replace(/,/g, ';'), image.file.name, manuName, manuLocation, manuDate.toString());
                 console.log("Mining (Registering Product) ...", registerTxn.hash);
                 setLoading("Mining (Register Product) ...");
-    
-                // Wait for the transaction to be mined
+
                 const receipt = await registerTxn.wait();
                 console.log("Mined (Register Product) --", receipt.transactionHash);
                 setLoading(receipt.transactionHash);
-    
-                // Generate QR code for the serial number
+
                 generateQRCode(serialNumber);
-    
-                // Retrieve product data from the contract
+
                 const product = await productContract.getProduct(serialNumber);
                 console.log("Retrieved product...", product);
-    
+
             } else {
                 console.error("Ethereum object doesn't exist!");
             }
@@ -346,14 +295,14 @@ const AddProduct = () => {
             console.error("Error registering product:", error);
         }
     }
-    
+
     const getCurrentTimeLocation = () => {
         setManuDate(dayjs().unix())
-        navigator.geolocation.getCurrentPosition(function(position) {
+        navigator.geolocation.getCurrentPosition(function (position) {
             setManuLatitude(position.coords.latitude);
             setManuLongtitude(position.coords.longitude);
-          });
-    }   
+        });
+    }
 
     const addProductDB = async (e) => {
         try {
@@ -361,15 +310,15 @@ const AddProduct = () => {
                 "serialNumber": serialNumber,
                 "name": name,
                 "brand": brand,
-              });
+            });
 
             const res = await axios.post('http://localhost:5000/addproduct', profileData,
                 {
-                    headers: {'Content-Type': 'application/json'},
+                    headers: { 'Content-Type': 'application/json' },
                 });
-            
+
             console.log(JSON.stringify(res.data));
-            
+
 
 
         } catch (err) {
@@ -382,17 +331,17 @@ const AddProduct = () => {
 
         const existingSerialNumbers = res.data.map((product) => product.serialnumber);
         // existingSerialNumbers.push(serialNumber);
-         
+
         // checking for duplicated serial number
         const duplicates = existingSerialNumbers.filter((item) => item === serialNumber)
         console.log("duplicates: ", duplicates, duplicates.length)
         // const isDuplicate = duplicates.length >= 1;
-      if(duplicates.length != 0){
-        setIsUnique(false)
-    }else {
-        existingSerialNumbers.push(serialNumber);
-          setIsUnique(true);
- }       // setIsUnique(!isDuplicate);   
+        if (duplicates.length != 0) {
+            setIsUnique(false)
+        } else {
+            existingSerialNumbers.push(serialNumber);
+            setIsUnique(true);
+        }       // setIsUnique(!isDuplicate);   
         console.log(existingSerialNumbers)
         console.log("isUnique: ", isUnique)
     }
@@ -401,7 +350,7 @@ const AddProduct = () => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-          
+
         console.log("..............................");
         console.log("name: ", name);
         console.log("brand: ", brand);
@@ -413,14 +362,14 @@ const AddProduct = () => {
         console.log("manufactured by: ", manuName);
 
         await checkUnique();
-   console.log("add product isUnique",isUnique)
-        if(isUnique){
+        console.log("add product isUnique", isUnique)
+        if (isUnique) {
             uploadImage(image);
             addProductDB(e); // add product to database
             setLoading("Please pay the transaction fee to update the product details...")
             await registerProduct(e);
-        }   
-       
+        }
+
         // setIsUnique(true);
     }
 
@@ -439,7 +388,7 @@ const AddProduct = () => {
             zIndex: -2,
             overflowY: "scroll"
         }}>
-             <Box
+            <Box
                 sx={{
                     position: 'absolute',
                     top: 20,
@@ -470,7 +419,7 @@ const AddProduct = () => {
                         onChange={(e) => setSerialNumber(e.target.value)}
                         value={serialNumber}
                     />
-                    
+
                     <TextField
                         fullWidth
                         id="outlined-basic"
@@ -504,7 +453,7 @@ const AddProduct = () => {
                         minRows={2}
                         onChange={(e) => setDescription(e.target.value)}
                         value={description}
-                    />                        
+                    />
 
 
                     <Button
@@ -526,25 +475,42 @@ const AddProduct = () => {
                         : null}
 
                     {qrData !== "" ? <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '3%' }}>
-                        <QRCode 
+                        <QRCode
                             value={qrData}
                             id="QRCode" />
-                
+
                     </div> : null}
 
-                    {qrData !== "" ? <div style={{ display: 'flex',  justifyContent: 'center', alignItems: 'center', marginTop: '3%' }}>
+                    {qrData !== "" ? <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '3%' }}>
                         <Button
                             variant="outlined"
                             component="label"
                             fullWidth
-                            sx={{ marginTop: "3%", marginBottom: "3%" }}                            
+                            sx={{ marginTop: "3%", marginBottom: "3%" }}
                             onClick={downloadQR}
                         >
                             Download
                         </Button>
-      
+
                     </div> : null}
-                
+
+                    {metadataUrl && (
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                textAlign: "center", marginTop: "3%"
+                            }}
+                        >
+                            <Link
+                                href={metadataUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                            >
+                                View Metadata on IPFS
+                            </Link>
+                        </Typography>
+                    )}
+
 
                     {
                         isUnique ? (
@@ -601,12 +567,12 @@ const AddProduct = () => {
                             Back
                         </Button>
 
-                    </Box>                    
+                    </Box>
 
                 </form>
 
             </Paper>
-          
+
 
         </Box>
     );

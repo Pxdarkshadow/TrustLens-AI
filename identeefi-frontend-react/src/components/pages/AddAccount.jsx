@@ -8,6 +8,7 @@ import { useNavigate } from 'react-router-dom';
 
 const options = ["manufacturer", "supplier", "retailer"]
 {console.log("hellp")}
+
 const AddAccount = () => {
     const [user, setUser] = useState('');
     const [pwd, setPwd] = useState('');
@@ -26,6 +27,7 @@ const AddAccount = () => {
     const errRef = useRef();
     const navigate = useNavigate()
 
+    
     useEffect(() => {
         setErrMsg('');
     }, [user, pwd]);
@@ -42,7 +44,9 @@ const AddAccount = () => {
     const uploadImage = async (image) => {
         const data = new FormData();
         data.append("image", image.file);
-
+      try {
+        
+      
         axios.post("http://localhost:5000/upload/profile", data, {
             headers: { "Content-Type": "multipart/form-data" }
         }).then(res => {
@@ -52,6 +56,11 @@ const AddAccount = () => {
                 console.log("image uploaded");
             }
         })
+
+    }catch (error) {
+        console.error("Error uploading image", error);
+
+        }
     }
 
     const handleBack = () => {
