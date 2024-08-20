@@ -196,8 +196,8 @@ const AddProduct = () => {
                 maxRedirects: 0,
                 headers: {
                     'Content-Type': 'multipart/form-data',
-                    pinata_api_key: 'fa2b19b73212285f0b63',
-                    pinata_secret_api_key: '3eb7e681c6a2bf3ce1f032102cae6842a0a77dccde1afdc198dc375b3993e393'
+                    pinata_api_key: '',
+                    pinata_secret_api_key: ''
                 }
             });
             return `https://aquamarine-accessible-takin-121.mypinata.cloud/ipfs/${resFile.data.IpfsHash}`;
